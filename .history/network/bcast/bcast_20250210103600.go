@@ -1,11 +1,11 @@
 package bcast
 
 import (
-	"Driver-go/network/conn"
 	"encoding/json"
 	"fmt"
 	"net"
 	"reflect"
+	"root/network/conn"
 )
 
 const bufSize = 1024

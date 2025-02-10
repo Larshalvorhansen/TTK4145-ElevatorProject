@@ -1,7 +1,7 @@
 package peers
 
 import (
-	"Driver-go/network/conn"
+	"Network-go/network/conn"
 	"fmt"
 	"net"
 	"sort"

@@ -1,7 +1,7 @@
 package bcast
 
 import (
-	"Driver-go/network/conn"
+	"Network-go/network/conn"
 	"encoding/json"
 	"fmt"
 	"net"
