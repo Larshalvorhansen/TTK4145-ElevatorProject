@@ -6,6 +6,7 @@ import (
 	"Driver-go/elevio"
 	"Driver-go/network/peers"
 	"reflect"
+	"strconv"
 )
 
 type Acknowledgement int
@@ -28,18 +29,6 @@ type CommonState struct {
 	SeqNumber      int
 	AckMap         [config.NumElevators]Acknowledgement
 }
-
-/*
-addOrder(cs *CommonState, newOrder elevio.ButtonEvent, id int)				DONE
-addCabCall(cs *CommonState, newOrder elevio.ButtonEvent, id int)			?HANDELED IN addOrder?
-removeOrder(cs *CommonState, deliveredOrder elevio.ButtonEvent, id int)		DONE
-updateState(cs *CommonState, newState elevator.State, id int)				DONE
-fullyAcked(cs *CommonState, id int) bool									DONE
-equals(oldCs CommonState, newCs CommonState) bool 							DONE
-makeLostPeersUnavailable(cs *CommonState, peers peers.PeerUpdate)			DONE
-makeOthersUnavailable(cs *CommonState, id int) 								DONE
-prepNewCs(cs *CommonState, id int)											DONE
-*/
 
 func (common_state *CommonState) addOrder(id int, newOrder elevio.ButtonEvent) {
 	if newOrder.Button == elevio.BT_Cab {
@@ -67,7 +56,10 @@ func (common_state *CommonState) makeOthersUnavailable(id int) {
 
 func (common_state *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, lostID := range peers.Lost {
-		common_state.AckMap[int(lostID)] = NotAvailable
+		intLostID, error := strconv.Atoi(lostID)
+		if error == nil {
+			common_state.AckMap[intLostID] = NotAvailable
+		}
 	}
 }
 
