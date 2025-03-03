@@ -1,16 +1,15 @@
+// This is the old working elevator.
+
 package elevator
 
 import (
 	"Driver-go/elevio"
+	"Driver-go/config"
 	"fmt"
 	"time"
 )
 
-// // Constants
-const Num_floors = 4
-const Door_open_duration = 3 * time.Second
-
-// // Queue
+// Queue
 type Queue_element struct {
 	Floor  int
 	Button elevio.ButtonType
@@ -147,7 +146,7 @@ func Reset_all_lamps(floor_num int) {
 }
 
 func (e *Elevator) Starting_routine(floor_sensor chan int) {
-	if e.Current_floor < Num_floors-1 {
+	if e.Current_floor < config.NumFloors-1 {
 		elevio.SetMotorDirection(elevio.MD_Down)
 		e.Current_floor = <-floor_sensor
 
@@ -159,7 +158,7 @@ func (e *Elevator) Starting_routine(floor_sensor chan int) {
 }
 
 func (e *Elevator) MoveToFloor(target_floor int, doorTimer *time.Timer) {
-	doorTimer.Reset(Door_open_duration)
+	doorTimer.Reset(config.DoorOpenDuration)
 	if e.Current_floor == target_floor && elevio.GetFloor() != -1 {
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		e.Direction = elevio.MD_Stop
@@ -179,7 +178,7 @@ func (e *Elevator) MoveToFloor(target_floor int, doorTimer *time.Timer) {
 func (e *Elevator) OpenDoor(doorTimer *time.Timer) {
 	elevio.SetDoorOpenLamp(true)
 	if e.Obstruction {
-		doorTimer.Reset(Door_open_duration)
+		doorTimer.Reset(config.DoorOpenDuration)
 	}
 
 	if !e.Obstruction && e.Timer_done {
@@ -199,13 +198,13 @@ func (e *Elevator) StateMachine(floor_sensor chan int, numFloors int, doorTimer 
 		e.Starting_routine(floor_sensor)
 
 	case Idle:
-		doorTimer.Reset(Door_open_duration)
+		doorTimer.Reset(config.DoorOpenDuration)
 		if e.Queue.Length() > 0 {
 			e.Current_state = Moving
 		}
 
 	case Moving:
-		doorTimer.Reset(Door_open_duration)
+		doorTimer.Reset(config.DoorOpenDuration)
 		stopFloor := e.Queue.Orders[0].Floor
 
 		if stopFloor > e.Current_floor {
@@ -223,19 +222,19 @@ func (e *Elevator) StateMachine(floor_sensor chan int, numFloors int, doorTimer 
 		}
 
 	case FullStop:
-		doorTimer.Reset(Door_open_duration)
+		doorTimer.Reset(config.DoorOpenDuration)
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		e.Direction = elevio.MD_Stop
 		time.Sleep(2 * time.Second)
 		e.Current_state = Undefined
-		doorTimer.Reset(Door_open_duration)
+		doorTimer.Reset(config.DoorOpenDuration)
 	}
 }
 
 func RunSingleElevator(id int) {
-	elevator := CreateElevator(id, Num_floors*3)
-	elevio.Init("localhost:15657", Num_floors)
-	Reset_all_lamps(Num_floors)
+	elevator := CreateElevator(id, config.NumFloors*3)
+	elevio.Init("localhost:15657", config.NumFloors)
+	Reset_all_lamps(config.NumFloors)
 	elevio.SetDoorOpenLamp(false)
 
 	drv_buttons := make(chan elevio.ButtonEvent)
@@ -248,7 +247,7 @@ func RunSingleElevator(id int) {
 	go elevio.PollObstructionSwitch(drv_obstruction)
 	go elevio.PollStopButton(drv_stop)
 
-	doorTimer := time.NewTimer(Door_open_duration)
+	doorTimer := time.NewTimer(config.DoorOpenDuration)
 	doorTimer.Stop()
 
 	fmt.Printf("Elevator %d ready for use \n", elevator.ID)
@@ -272,7 +271,7 @@ func RunSingleElevator(id int) {
 			elevator.Timer_done = true
 
 		default:
-			elevator.StateMachine(drv_floors, Num_floors, doorTimer)
+			elevator.StateMachine(drv_floors, config.NumFloors, doorTimer)
 		}
 	}
 }
