@@ -18,7 +18,7 @@ const (
 )
 
 type LocalState struct {
-	State     elevator.Elevator
+	State     elevator.State
 	CabOrders [config.NumFloors]bool
 }
 
@@ -82,7 +82,7 @@ func (common_state *CommonState) equalCheck(otherCS CommonState) bool {
 	return reflect.DeepEqual(common_state, otherCS)
 }
 
-func (common_state *CommonState) updateElevatorState(id int, newState elevator.Elevator) {
+func (common_state *CommonState) updateElevatorState(id int, newState elevator.State) {
 	common_state.ElevatorStates[id].State = newState
 }
 
