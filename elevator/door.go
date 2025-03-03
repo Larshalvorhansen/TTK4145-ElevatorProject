@@ -16,16 +16,16 @@ const (
 
 // Door controls the elevator door operation
 func Door(
-	doorClosedC chan<- bool, // Sends signal when the door is closed
+	doorClosedC chan<- bool, // SendoorState signal when the door is closed
 	doorOpenC <-chan bool, // Receives signal to open the door
-	obstructedC chan<- bool, // Sends signal when an obstruction is detected
+	obstructedC chan<- bool, // SendoorState signal when an obstruction is detected
 ) {
 	elevio.SetDoorOpenLamp(false) // Ensure door lamp is off initially
 	obstructionC := make(chan bool)
 	go elevio.PollObstructionSwitch(obstructionC) // Continuously check for obstructions
 
 	obstruction := false
-	ds := Closed
+	doorState := Closed
 	timeCounter := time.NewTimer(0)
 	<-timeCounter.C    // Drain initial timer event
 	timeCounter.Stop() // Stop unused timer
@@ -33,10 +33,10 @@ func Door(
 	for {
 		select {
 		case obstruction = <-obstructionC: // Handle obstruction state
-			if !obstruction && ds == Obstructed {
+			if !obstruction && doorState == Obstructed {
 				elevio.SetDoorOpenLamp(false) // Close door when obstruction is cleared
 				doorClosedC <- true
-				ds = Closed
+				doorState = Closed
 			}
 			obstructedC <- obstruction // Notify about obstruction status
 
@@ -44,7 +44,7 @@ func Door(
 			if obstruction {
 				obstructedC <- true // Notify about obstruction
 			}
-			if ds == Closed || ds == Obstructed {
+			if doorState == Closed || doorState == Obstructed {
 				elevio.SetDoorOpenLamp(true) // Open the door
 			}
 			// Reset countdown timer safely
@@ -52,18 +52,18 @@ func Door(
 				<-timeCounter.C
 			}
 			timeCounter.Reset(config.DoorOpenDuration)
-			ds = InCountDown
+			doorState = InCountDown
 
 		case <-timeCounter.C: // Handle countdown expiration
-			if ds != InCountDown {
+			if doorState != InCountDown {
 				panic("Door state not implemented") // Prevent undefined states
 			}
 			if obstruction {
-				ds = Obstructed // Stay open if obstructed
+				doorState = Obstructed // Stay open if obstructed
 			} else {
 				elevio.SetDoorOpenLamp(false) // Close the door
 				doorClosedC <- true
-				ds = Closed
+				doorState = Closed
 			}
 		}
 	}

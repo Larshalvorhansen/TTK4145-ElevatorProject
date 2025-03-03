@@ -1,3 +1,5 @@
+// TODO: gå over funksjonene, f.eks. er Opposite() nødvendig?
+
 package elevator
 
 import (
