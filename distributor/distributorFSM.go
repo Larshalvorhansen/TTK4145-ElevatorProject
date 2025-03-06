@@ -8,7 +8,6 @@ import (
 /*
 Logisk oversikt:
 
-
 ->sjekk disconect timer
 ->sende hearbeat
 ->sende status
@@ -32,11 +31,10 @@ koblet til
 
 func Distributor(
 
-
 ){
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
 	updateInterval := time.NewTicker(config.UpdateIntervalTime)
-	
+
 	idle := true
 	online := true
 
@@ -51,7 +49,7 @@ func Distributor(
 		//Send status
 		case :/*noe skrives på tickerkanalen*/
 			sende common state til networkTx
-			
+
 		case :/*noe må gjøres*/:
 
 			/*
