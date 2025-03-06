@@ -25,29 +25,4 @@ Manages the indicator lights for the elevator system.
 - **lights.go**: Controls the lighting of hall and cab buttons based on the elevator's state.
 
 ### **config/**
-Stores configuration parameters for the system.
-
-- **config.go**: Defines constants for system parameters such as number of floors, timing configurations, and network buffer size.
-
-## Running the System
-To operate a single elevator, modify `main.go` to initialize and run the elevator FSM:
-
-```go
-package main
-
-import (
-    "Driver-go/config"
-    "Driver-go/elevator"
-    "Driver-go/elevio"
-)
-
-func main() {
-    elevio.Init("localhost:15657", config.NumFloors)
-    newOrderC := make(chan elevator.Orders, config.Buffer)
-    deliveredOrderC := make(chan elevio.ButtonEvent, config.Buffer)
-    newStateC := make(chan elevator.State, config.Buffer)
-
-    go elevator.Elevator(newOrderC, deliveredOrderC, newStateC)
-
-    select {} // Keep the main function running
-}
+Stores configuration parameters that other modules can use.
