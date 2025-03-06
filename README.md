@@ -23,3 +23,6 @@ TTK4145 developed this network module, which you can access [here](https://githu
 
 ### **config**
 Stores configuration parameters that other modules can use.
+
+
+More to add?
