@@ -16,13 +16,13 @@ Provides an interface for hardware interaction.
 Manages the lights for the elevator system.
 
 ### **assigner**
-TODO
+Assigns the hall requests to different elevators based on an algorithm using the provided example code in project resources which is accesible [here](https://github.com/TTK4145/Project-resources/tree/master/cost_fns).
 
 ### **network**
 TTK4145 developed this network module, which you can access [here](https://github.com/TTK4145/Network-go). Although we adjusted the code slightly to suit our purposes, but it remains mostly unchanged from the original.
 
 ### **config**
-Stores configuration parameters that other modules can use.
+Stores configuration parameters that several modules use, e.g. number of floors.
 
 
 More to add?
