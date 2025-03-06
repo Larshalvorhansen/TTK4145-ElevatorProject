@@ -42,14 +42,15 @@ func (common_state *CommonState) addOrder(id int, newOrder elevio.ButtonEvent) {
 	}
 }
 
-func (common_state *CommonState) removeOrder(id int, deliveredOrder elevio.ButtonEvent) {
-	if deliveredOrder.Button == elevio.BT_Cab {
-		common_state.ElevatorStates[id].CabOrders[deliveredOrder.Floor] = false
+func (common_state *CommonState) removeOrder(id int, finishedOrder elevio.ButtonEvent) {
+	if finishedOrder.Button == elevio.BT_Cab {
+		common_state.ElevatorStates[id].CabOrders[finishedOrder.Floor] = false
 	} else {
-		common_state.HallOrders[deliveredOrder.Floor][int(deliveredOrder.Button)] = false
+		common_state.HallOrders[finishedOrder.Floor][int(finishedOrder.Button)] = false
 	}
 }
 
+// for if the elevator is disconnected from the network
 func (common_state *CommonState) makeOthersUnavailable(id int) {
 	for i := 0; i < config.NumElevators; i++ {
 		if i != id {
@@ -58,6 +59,7 @@ func (common_state *CommonState) makeOthersUnavailable(id int) {
 	}
 }
 
+// to remove disconnected elevators from the commonstate, so that the others can still be fully acknowledged
 func (common_state *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, lostID := range peers.Lost {
 		intLostID, error := strconv.Atoi(lostID)
@@ -67,6 +69,7 @@ func (common_state *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate
 	}
 }
 
+// syncronized (all elevators have the same worldview) if the common state is fully acknowledged
 func (common_state *CommonState) fullyAcknowledged(id int) bool {
 	if common_state.AckMap[id] == NotAvailable {
 		return false
@@ -90,7 +93,8 @@ func (common_state *CommonState) updateElevatorState(id int, newState elevator.S
 	common_state.ElevatorStates[id].State = newState
 }
 
-func (common_state *CommonState) prepNewCS(id int) {
+// prepares a new common state to be sent
+func (common_state *CommonState) prepareNewCS(id int) {
 	common_state.Origin = id
 	common_state.SeqNumber++
 	for i := 0; i < config.NumElevators; i++ {
