@@ -1,4 +1,4 @@
-package distributor
+package commonstate
 
 import (
 	"Driver-go/config"
@@ -17,17 +17,21 @@ const (
 	NotAvailable
 )
 
+// the state of a single elevator and its cabcalls
 type LocalState struct {
 	State     elevator.State
 	CabOrders [config.NumFloors]bool
 }
 
+// To keep track of the state of the whole system (all elevators and orders),
+// as well as making sure all elevators are syncronized (have the same worldview)
 type CommonState struct {
 	ElevatorStates [config.NumElevators]LocalState
-	HallOrders     [config.NumFloors][2]bool // request from floors, up or down direction
-	Origin         int                       // which elevator is sending the common state
-	SeqNumber      int
-	AckMap         [config.NumElevators]Acknowledgement
+	HallOrders     [config.NumFloors][2]bool            // request from floors, up or down direction
+	Origin         int                                  // which elevator is sending the common state
+	SeqNumber      int                                  // icrements with every new common state
+	AckMap         [config.NumElevators]Acknowledgement // to keep track of the other elevators acknowledgement, and make
+	// sure that all the elevators have received the latest state
 }
 
 func (common_state *CommonState) addOrder(id int, newOrder elevio.ButtonEvent) {
@@ -75,7 +79,7 @@ func (common_state *CommonState) fullyAcknowledged(id int) bool {
 	return true
 }
 
-// equalCheck checks if two common states are equal with exeption of the AckMap
+// checks if two common states are equal with exeption of the AckMap
 func (common_state *CommonState) equalCheck(otherCS CommonState) bool {
 	common_state.AckMap = [config.NumElevators]Acknowledgement{}
 	otherCS.AckMap = [config.NumElevators]Acknowledgement{}
@@ -97,3 +101,8 @@ func (common_state *CommonState) prepNewCS(id int) {
 		}
 	}
 }
+
+/*
+We must still acutally implement a state machine to use/update the common state according to
+the logic of how we want the elevators to behave.
+*/

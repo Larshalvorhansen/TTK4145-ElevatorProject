@@ -2,12 +2,12 @@ package lights
 
 import (
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/commonstate"
 	"Driver-go/elevio"
 )
 
 // SetLights sets the lights for the elevator system based on the current state.
-func SetLights(common_state distributor.CommonState, ElevatorID int) { // TODO: check if this is implemented in distributor
+func SetLights(common_state commonstate.CommonState, ElevatorID int) { // TODO: check if this is implemented in distributor
 	// Set hall button lights
 	for f := 0; f < config.NumFloors; f++ {
 		for b := 0; b < 2; b++ { // Iterate over button types (up and down)
