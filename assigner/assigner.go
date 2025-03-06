@@ -1,9 +1,6 @@
 package assigner
 
 import (
-	// "Driver-go/config"
-	// "Driver-go/distributor"
-	// "Driver-go/elevator"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -11,8 +8,8 @@ import (
 )
 
 // Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
-// This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
 
+// HRA stands for Hall Request Assigner
 type HRAElevState struct {
 	Behavior    string `json:"behaviour"`
 	Floor       int    `json:"floor"`
@@ -25,7 +22,11 @@ type HRAInput struct {
 	States       map[string]HRAElevState `json:"states"`
 }
 
-func CalculateOrders() {
+/*
+Should change the input of CalculateOrders to be the elevatorstates and hallrequests,
+as we must send the data to the assigner in order to assign the requests to the appropriate elevators
+*/
+func CalculateOrders(input HRAInput) {
 
 	hraExecutable := ""
 	switch runtime.GOOS {
@@ -37,37 +38,23 @@ func CalculateOrders() {
 		panic("OS not supported")
 	}
 
-	input := HRAInput{
-		HallRequests: [][2]bool{{false, false}, {true, false}, {false, false}, {false, true}},
-		States: map[string]HRAElevState{
-			"one": HRAElevState{
-				Behavior:    "moving",
-				Floor:       2,
-				Direction:   "up",
-				CabRequests: []bool{false, false, false, true},
-			},
-			"two": HRAElevState{
-				Behavior:    "idle",
-				Floor:       0,
-				Direction:   "stop",
-				CabRequests: []bool{false, false, false, false},
-			},
-		},
-	}
-
+	// Returns the JSON encoding of input
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {
 		fmt.Println("json.Marshal error: ", err)
 		return
 	}
 
-	ret, err := exec.Command("../hall_request_assigner/"+hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
+	// .Command -> returns the cmd struct to execute the named program with the given arguments
+	// .CombinedOutput -> runs the command and returns its combined standard output and standard error
+	ret, err := exec.Command("../assigner/"+hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
 	if err != nil {
 		fmt.Println("exec.Command error: ", err)
 		fmt.Println(string(ret))
 		return
 	}
 
+	// unmarshals the JSON data stores in ret into the output map
 	output := new(map[string][][2]bool)
 	err = json.Unmarshal(ret, &output)
 	if err != nil {
@@ -75,6 +62,7 @@ func CalculateOrders() {
 		return
 	}
 
+	// should be changed as to return the output instead of printing it
 	fmt.Printf("output: \n")
 	for k, v := range *output {
 		fmt.Printf("%6v :  %+v\n", k, v)
