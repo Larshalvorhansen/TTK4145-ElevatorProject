@@ -1,4 +1,9 @@
+//go:build linux
 // +build linux
+
+/*
+Includes function for creating a UDP broadcast socket on Linux
+*/
 
 package conn
 
@@ -11,17 +16,27 @@ import (
 
 func DialBroadcastUDP(port int) net.PacketConn {
 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_UDP)
-	if err != nil { fmt.Println("Error: Socket:", err) }
+	if err != nil {
+		fmt.Println("Error: Socket:", err)
+	}
 	syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-	if err != nil { fmt.Println("Error: SetSockOpt REUSEADDR:", err) }
+	if err != nil {
+		fmt.Println("Error: SetSockOpt REUSEADDR:", err)
+	}
 	syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
-	if err != nil { fmt.Println("Error: SetSockOpt BROADCAST:", err) }
+	if err != nil {
+		fmt.Println("Error: SetSockOpt BROADCAST:", err)
+	}
 	syscall.Bind(s, &syscall.SockaddrInet4{Port: port})
-	if err != nil { fmt.Println("Error: Bind:", err) }
+	if err != nil {
+		fmt.Println("Error: Bind:", err)
+	}
 
 	f := os.NewFile(uintptr(s), "")
 	conn, err := net.FilePacketConn(f)
-	if err != nil { fmt.Println("Error: FilePacketConn:", err) }
+	if err != nil {
+		fmt.Println("Error: FilePacketConn:", err)
+	}
 	f.Close()
 
 	return conn

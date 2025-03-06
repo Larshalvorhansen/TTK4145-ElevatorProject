@@ -1,3 +1,8 @@
+/*
+Module for keeping track of peers connected to the network,
+as well as sending the local elevator's id so that the other elevator can keep track of it.
+*/
+
 package peers
 
 import (

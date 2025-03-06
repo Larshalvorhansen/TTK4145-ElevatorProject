@@ -1,3 +1,7 @@
+/*
+Used for sending the local elevators IP-address to the other elevators.
+*/
+
 package localip
 
 import (

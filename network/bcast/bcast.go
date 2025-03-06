@@ -1,3 +1,8 @@
+/*
+Model is for transmitting and receiving data that is changed to/from JSON-format before/after sending.
+It also includes functions that checks if the arguments are valid.
+*/
+
 package bcast
 
 import (
