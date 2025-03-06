@@ -1,4 +1,4 @@
-package elevator
+package lights
 
 import (
 	"Driver-go/config"
