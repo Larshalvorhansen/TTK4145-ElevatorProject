@@ -9,59 +9,63 @@ import (
 type DoorState int
 
 const (
-	Closed      DoorState = iota // Door is fully closed
-	InCountDown                  // Door is open and counting down
-	Obstructed                   // Door is obstructed
+	Closed      DoorState = 0
+	InCountDown DoorState = 1
+	Obstructed  DoorState = 2
 )
 
-// Door controls the elevator door operation
-func Door(
-	doorClosedC chan<- bool, // SendoorState signal when the door is closed
-	doorOpenC <-chan bool, // Receives signal to open the door
-	obstructedC chan<- bool, // SendoorState signal when an obstruction is detected
+func ManageDoor(
+	doorOpenC <-chan bool,
+	doorClosedC chan<- bool,
+	doorObstructedC chan<- bool,
 ) {
-	elevio.SetDoorOpenLamp(false) // Ensure door lamp is off initially
-	obstructionC := make(chan bool)
-	go elevio.PollObstructionSwitch(obstructionC) // Continuously check for obstructions
-
-	obstruction := false
 	doorState := Closed
-	timeCounter := time.NewTimer(0)
-	<-timeCounter.C    // Drain initial timer event
-	timeCounter.Stop() // Stop unused timer
+	obstruction := false
+
+	obstructionC := make(chan bool)
+	go elevio.PollObstructionSwitch(obstructionC)
+
+	timeCounter := time.NewTimer(time.Hour)
+	defer timeCounter.Stop()
+
+	SetDoorLamp(false)
 
 	for {
 		select {
-		case obstruction = <-obstructionC: // Handle obstruction state
-			if !obstruction && doorState == Obstructed {
-				elevio.SetDoorOpenLamp(false) // Close door when obstruction is cleared
+		// Handle obstruction detection
+		case obstruction = <-obstructionC:
+			if doorState == Obstructed && !obstruction {
+				SetDoorLamp(false)
 				doorClosedC <- true
 				doorState = Closed
 			}
-			obstructedC <- obstruction // Notify about obstruction status
+			select {
+			case doorObstructedC <- obstruction:
+			default:
+			}
 
-		case <-doorOpenC: // Handle door opening request
-			if obstruction {
-				obstructedC <- true // Notify about obstruction
-			}
-			if doorState == Closed || doorState == Obstructed {
-				elevio.SetDoorOpenLamp(true) // Open the door
-			}
-			// Reset countdown timer safely
-			if !timeCounter.Stop() {
-				<-timeCounter.C
-			}
-			timeCounter.Reset(config.DoorOpenDuration)
-			doorState = InCountDown
-
-		case <-timeCounter.C: // Handle countdown expiration
-			if doorState != InCountDown {
-				panic("Door state not implemented") // Prevent undefined states
-			}
-			if obstruction {
-				doorState = Obstructed // Stay open if obstructed
+		// Handle door opening request
+		case <-doorOpenC:
+			if doorState == Closed {
+				SetDoorLamp(true)
+				timeCounter.Reset(config.DoorOpenDuration)
+				doorState = InCountDown
+			} else if doorState == InCountDown || doorState == Obstructed {
+				timeCounter.Reset(config.DoorOpenDuration)
+				doorState = InCountDown
 			} else {
-				elevio.SetDoorOpenLamp(false) // Close the door
+				panic("Door state not implemented")
+			}
+
+		// Handle door closing after countdown
+		case <-timeCounter.C:
+			if doorState != InCountDown {
+				panic("Unexpected timer event in wrong state")
+			}
+			if obstruction {
+				doorState = Obstructed
+			} else {
+				SetDoorLamp(false)
 				doorClosedC <- true
 				doorState = Closed
 			}

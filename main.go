@@ -4,7 +4,6 @@ import (
 	"Driver-go/config"
 	"Driver-go/elevator"
 	"Driver-go/elevio"
-	"Driver-go/lights"
 	"flag"
 	"fmt"
 	"strconv"
@@ -14,10 +13,9 @@ var Port int
 var id int
 
 func main() {
-	// elevator.RunSingleElevator(222)
 
-	port := flag.Int("port", 15657, "<-- Default value, override with command line argument -port=xxxxx")
-	elevatorId := flag.Int("id", 0, "<-- Default value, override with command line argument -id=x")
+	port := flag.Int("port", 15657, "Elevator server port (default: 15657)") // The flag package shows available command-line options with "go run main.go -help".
+	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
 
 	Port = *port
@@ -25,22 +23,32 @@ func main() {
 
 	elevio.Init("localhost:"+strconv.Itoa(Port), config.NumFloors)
 
-	fmt.Println("Elevator initialized with id", id, "on port", Port)
-	fmt.Println("System has", config.NumFloors, "floors and", config.NumElevators, "elevators.")
+	fmt.Println("Elevator initialized.")
+	fmt.Println("Elevator ID:", id, "Conntected to port:", Port)
+	fmt.Println("Configuration: Floors =", config.NumFloors, ", Elevators =", config.NumElevators)
 
-	newOrderC := make(chan elevator.Orders, config.Buffer)
-	deliveredOrderC := make(chan elevio.ButtonEvent, config.Buffer)
-	newStateC := make(chan elevator.State, config.Buffer)
+	buttonEventC := make(chan elevio.ButtonEvent)
+	newOrderC := make(chan elevator.Orders)
+	deliveredOrderC := make(chan elevio.ButtonEvent)
+	newStateC := make(chan elevator.State)
 
+	// 🔹 Start nødvendige goroutines
+	go elevio.PollButtons(buttonEventC)
 	go elevator.Elevator(newOrderC, deliveredOrderC, newStateC)
 
 	for {
 		select {
-		case cs := <-newStateC:
-			lights.SetLights(cs, id)
+		case btn := <-buttonEventC:
+			fmt.Println("Button pressed:", btn)
+			var order elevator.Orders
+			order[btn.Floor][btn.Button] = true
+			newOrderC <- order
 
-		default:
-			continue
+		case delivered := <-deliveredOrderC:
+			fmt.Println("Order delivered:", delivered)
+
+		case state := <-newStateC:
+			fmt.Println("\nNew state:", state)
 		}
 	}
 }
