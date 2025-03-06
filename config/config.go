@@ -12,6 +12,5 @@ const (
 
 	DisconnectTime     = 2 * time.Second
 	DoorOpenDuration   = 3 * time.Second
-	UpdateIntervalTime = 40 * time.Millisecond
 	WatchdogTime       = 4 * time.Second
 )
