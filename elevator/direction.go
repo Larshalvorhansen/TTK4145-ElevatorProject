@@ -1,11 +1,11 @@
-// TODO: gå over funksjonene, f.eks. er Opposite() nødvendig?
-
 package elevator
 
 import (
 	"Driver-go/elevio"
+	"fmt"
 )
 
+// Direction represents the movement direction of the elevator.
 type Direction int
 
 const (
@@ -13,38 +13,33 @@ const (
 	Down
 )
 
-// Predefined maps to avoid recreating them on every function call
-var directionToMotor = map[Direction]elevio.MotorDirection{
-	Up:   elevio.MD_Up,
-	Down: elevio.MD_Down,
-}
-
-var directionToButton = map[Direction]elevio.ButtonType{
-	Up:   elevio.BT_HallUp,
-	Down: elevio.BT_HallDown,
-}
-
-var oppositeDirection = map[Direction]Direction{
-	Up:   Down,
-	Down: Up,
-}
-
 // Converts Direction to elevio.MotorDirection
 func (d Direction) ToMotorDirection() elevio.MotorDirection {
-	return directionToMotor[d]
+	switch d {
+	case Up:
+		return elevio.MD_Up
+	case Down:
+		return elevio.MD_Down
+	default:
+		fmt.Println("Warning: Invalid direction in ToMotorDirection(), returning MD_Stop")
+		return elevio.MD_Stop
+	}
 }
 
-// Converts Direction to elevio.ButtonType
+// Converts Direction to elevio.ButtonType (used for button events)
 func (d Direction) ToButtonType() elevio.ButtonType {
-	return directionToButton[d]
+	switch d {
+	case Up:
+		return elevio.BT_HallUp
+	case Down:
+		return elevio.BT_HallDown
+	default:
+		fmt.Println("Warning: Invalid direction in ToButtonType(), returning invalid value")
+		return -1 // Invalid ButtonType
+	}
 }
 
-// Returns the opposite direction
-func (d Direction) Opposite() Direction {
-	return oppositeDirection[d]
-}
-
-// Converts Direction to a string for logging/debugging
+// Converts Direction to a readable string
 func (d Direction) ToString() string {
 	switch d {
 	case Up:
@@ -52,6 +47,16 @@ func (d Direction) ToString() string {
 	case Down:
 		return "down"
 	default:
+		fmt.Println("Warning: Invalid direction in ToString(), returning 'unknown'")
 		return "unknown"
 	}
+}
+
+// Returns the opposite direction
+func (d Direction) FlipDirection() Direction {
+	if d != Up && d != Down {
+		fmt.Println("Warning: Invalid direction in Opposite(), returning Up as default")
+		return Up
+	}
+	return Direction(1 - d)
 }

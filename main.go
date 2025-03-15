@@ -1,43 +1,66 @@
 package main
 
 import (
+	"Driver-go/assigner"
 	"Driver-go/config"
+	"Driver-go/distributor"
 	"Driver-go/elevator"
 	"Driver-go/elevio"
-	"Driver-go/lights"
+	"Driver-go/lamp"
+	"Driver-go/network/bcast"
+	"Driver-go/network/peers"
 	"flag"
 	"fmt"
 	"strconv"
 )
 
-var Port int
-var id int
-
 func main() {
-	// elevator.RunSingleElevator(222)
 
-	port := flag.Int("port", 15657, "<-- Default value, override with command line argument -port=xxxxx")
-	elevatorId := flag.Int("id", 0, "<-- Default value, override with command line argument -id=x")
+	serverPort := flag.Int("port", 15657, "Elevator server port (default: 15657)")
+	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
 
-	Port = *port
-	id = *elevatorId
+	port := *serverPort
+	id := *elevatorId
 
-	elevio.Init("localhost:"+strconv.Itoa(Port), config.NumFloors)
+	elevio.Init("localhost:"+strconv.Itoa(port), config.NumFloors)
 
-	fmt.Println("Elevator initialized with id", id, "on port", Port)
-	fmt.Println("System has", config.NumFloors, "floors and", config.NumElevators, "elevators.")
+	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", id, port, config.NumFloors, config.NumElevators)
 
-	newOrderC := make(chan elevator.Orders, config.Buffer)
-	deliveredOrderC := make(chan elevio.ButtonEvent, config.Buffer)
-	newStateC := make(chan elevator.State, config.Buffer)
+	newOrderC := make(chan elevator.Orders, config.BufferSize)
+	deliveredOrderC := make(chan elevio.ButtonEvent, config.BufferSize)
+	newStateC := make(chan elevator.State, config.BufferSize)
+	confirmedCommonStateC := make(chan distributor.CommonState, config.BufferSize)
+	networkTxC := make(chan distributor.CommonState, config.BufferSize)
+	networkRxC := make(chan distributor.CommonState, config.BufferSize)
+	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
+	peersTxC := make(chan bool, config.BufferSize)
 
-	go elevator.Elevator(newOrderC, deliveredOrderC, newStateC)
+	go peers.Receiver(config.PeersPortNumber, peersRxC)
+	go peers.Transmitter(config.PeersPortNumber, id, peersTxC)
+
+	go bcast.Receiver(config.BcastPortNumber, networkRxC)
+	go bcast.Transmitter(config.BcastPortNumber, networkTxC)
+
+	go distributor.Distributor(
+		confirmedCommonStateC,
+		deliveredOrderC,
+		newStateC,
+		networkTxC,
+		networkRxC,
+		peersRxC,
+		id)
+
+	go elevator.Elevator(
+		newOrderC,
+		deliveredOrderC,
+		newStateC)
 
 	for {
 		select {
-		case cs := <-newStateC:
-			lights.SetLights(cs, id)
+		case commonState := <-confirmedCommonStateC:
+			newOrderC <- assigner.CalculateOptimalOrders(commonState, id)
+			lamp.SetLamps(commonState, id)
 
 		default:
 			continue

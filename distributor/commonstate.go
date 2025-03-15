@@ -6,94 +6,96 @@ import (
 	"Driver-go/elevio"
 	"Driver-go/network/peers"
 	"reflect"
-	"strconv"
 )
 
-type Acknowledgement int
+type AckStatus int
 
 const (
-	Acked Acknowledgement = iota
-	NotAcked
+	NotAcked AckStatus = iota
+	Acked
 	NotAvailable
 )
 
 type LocalState struct {
-	State     elevator.State
-	CabOrders [config.NumFloors]bool
+	State       elevator.State
+	CabRequests [config.NumFloors]bool
 }
 
 type CommonState struct {
-	ElevatorStates [config.NumElevators]LocalState
-	HallOrders     [config.NumFloors][2]bool // request from floors, up or down direction
-	Origin         int                       // which elevator is sending the common state
-	SeqNumber      int
-	AckMap         [config.NumElevators]Acknowledgement
+	SeqNum       int
+	Origin       int
+	Ackmap       [config.NumElevators]AckStatus
+	HallRequests [config.NumFloors][2]bool
+	States       [config.NumElevators]LocalState
 }
 
-func (common_state *CommonState) addOrder(id int, newOrder elevio.ButtonEvent) {
+func (cs *CommonState) addOrder(newOrder elevio.ButtonEvent, id int) {
 	if newOrder.Button == elevio.BT_Cab {
-		common_state.ElevatorStates[id].CabOrders[newOrder.Floor] = true
+		cs.States[id].CabRequests[newOrder.Floor] = true
 	} else {
-		common_state.HallOrders[newOrder.Floor][int(newOrder.Button)] = true
+		cs.HallRequests[newOrder.Floor][newOrder.Button] = true
 	}
 }
 
-func (common_state *CommonState) removeOrder(id int, deliveredOrder elevio.ButtonEvent) {
+func (cs *CommonState) addCabCall(newOrder elevio.ButtonEvent, id int) {
+	if newOrder.Button == elevio.BT_Cab {
+		cs.States[id].CabRequests[newOrder.Floor] = true
+	}
+}
+
+func (cs *CommonState) removeOrder(deliveredOrder elevio.ButtonEvent, id int) {
 	if deliveredOrder.Button == elevio.BT_Cab {
-		common_state.ElevatorStates[id].CabOrders[deliveredOrder.Floor] = false
+		cs.States[id].CabRequests[deliveredOrder.Floor] = false
 	} else {
-		common_state.HallOrders[deliveredOrder.Floor][int(deliveredOrder.Button)] = false
+		cs.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false
 	}
 }
 
-func (common_state *CommonState) makeOthersUnavailable(id int) {
-	for i := 0; i < config.NumElevators; i++ {
-		if i != id {
-			common_state.AckMap[i] = NotAvailable
-		}
+func (cs *CommonState) updateState(newState elevator.State, id int) {
+	cs.States[id] = LocalState{
+		State:       newState,
+		CabRequests: cs.States[id].CabRequests,
 	}
 }
 
-func (common_state *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
-	for _, lostID := range peers.Lost {
-		intLostID, error := strconv.Atoi(lostID)
-		if error == nil {
-			common_state.AckMap[intLostID] = NotAvailable
-		}
-	}
-}
-
-func (common_state *CommonState) fullyAcknowledged(id int) bool {
-	if common_state.AckMap[id] == NotAvailable {
+func (cs *CommonState) fullyAcked(id int) bool {
+	if cs.Ackmap[id] == NotAvailable {
 		return false
 	}
-	for index := range common_state.AckMap {
-		if common_state.AckMap[index] == NotAcked {
+	for index := range cs.Ackmap {
+		if cs.Ackmap[index] == NotAcked {
 			return false
 		}
 	}
 	return true
 }
 
-// equalCheck checks if two common states are equal with exeption of the AckMap
-func (common_state *CommonState) equalCheck(otherCS CommonState) bool {
-	common_state.AckMap = [config.NumElevators]Acknowledgement{}
-	otherCS.AckMap = [config.NumElevators]Acknowledgement{}
-	return reflect.DeepEqual(common_state, otherCS)
+func (oldCs CommonState) equals(newCs CommonState) bool {
+	oldCs.Ackmap = [config.NumElevators]AckStatus{}
+	newCs.Ackmap = [config.NumElevators]AckStatus{}
+	return reflect.DeepEqual(oldCs, newCs)
 }
 
-func (common_state *CommonState) updateElevatorState(id int, newState elevator.State) {
-	common_state.ElevatorStates[id].State = newState
+func (cs *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
+	for _, id := range peers.Lost {
+		cs.Ackmap[id] = NotAvailable
+	}
 }
 
-func (common_state *CommonState) prepNewCS(id int) {
-	common_state.Origin = id
-	common_state.SeqNumber++
-	for i := 0; i < config.NumElevators; i++ {
-		if i == id {
-			common_state.AckMap[i] = Acked
-		} else {
-			common_state.AckMap[i] = NotAcked
+func (cs *CommonState) makeOthersUnavailable(id int) {
+	for elev := range cs.Ackmap {
+		if elev != id {
+			cs.Ackmap[elev] = NotAvailable
+		}
+	}
+}
+
+func (cs *CommonState) prepNewCs(id int) {
+	cs.SeqNum++
+	cs.Origin = id
+	for id := range cs.Ackmap {
+		if cs.Ackmap[id] == Acked {
+			cs.Ackmap[id] = NotAcked
 		}
 	}
 }

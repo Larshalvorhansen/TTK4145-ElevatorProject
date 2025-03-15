@@ -1,31 +1,51 @@
 package assigner
 
 import (
-	// "Driver-go/config"
-	// "Driver-go/distributor"
-	// "Driver-go/elevator"
+	"Driver-go/config"
+	"Driver-go/distributor"
+	"Driver-go/elevator"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strconv"
 )
 
-// Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
-// This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
-
-type HRAElevState struct {
-	Behavior    string `json:"behaviour"`
-	Floor       int    `json:"floor"`
-	Direction   string `json:"direction"`
-	CabRequests []bool `json:"cabRequests"`
+type HRAState struct {
+	Behaviour   string                 `json:"behaviour"`
+	Floor       int                    `json:"floor"`
+	Direction   string                 `json:"direction"`
+	CabRequests [config.NumFloors]bool `json:"cabRequests"`
 }
 
 type HRAInput struct {
-	HallRequests [][2]bool               `json:"hallRequests"`
-	States       map[string]HRAElevState `json:"states"`
+	HallRequests [config.NumFloors][2]bool `json:"hallRequests"`
+	States       map[string]HRAState       `json:"states"`
 }
 
-func CalculateOrders() {
+func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders {
+
+	stateMap := make(map[string]HRAState)
+	for i, v := range cs.States {
+		if cs.Ackmap[i] == distributor.NotAvailable || v.State.Motorstop { // removed the additional "... || v.State,Obstructed" for single elevator use
+			continue
+		} else {
+			stateMap[strconv.Itoa(i)] = HRAState{
+				Behaviour:   v.State.Behaviour.ToString(),
+				Floor:       v.State.Floor,
+				Direction:   v.State.Direction.ToString(),
+				CabRequests: v.CabRequests,
+			}
+		}
+	}
+
+	// For debugging
+	if len(stateMap) == 0 {
+		fmt.Println("no elevator states available for assignment!")
+		panic("no elevator states available for assignment!")
+	}
+
+	hraInput := HRAInput{cs.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {
@@ -37,46 +57,25 @@ func CalculateOrders() {
 		panic("OS not supported")
 	}
 
-	input := HRAInput{
-		HallRequests: [][2]bool{{false, false}, {true, false}, {false, false}, {false, true}},
-		States: map[string]HRAElevState{
-			"one": HRAElevState{
-				Behavior:    "moving",
-				Floor:       2,
-				Direction:   "up",
-				CabRequests: []bool{false, false, false, true},
-			},
-			"two": HRAElevState{
-				Behavior:    "idle",
-				Floor:       0,
-				Direction:   "stop",
-				CabRequests: []bool{false, false, false, false},
-			},
-		},
-	}
-
-	jsonBytes, err := json.Marshal(input)
+	jsonBytes, err := json.Marshal(hraInput)
 	if err != nil {
 		fmt.Println("json.Marshal error: ", err)
-		return
+		panic("json.Marshal error")
 	}
 
-	ret, err := exec.Command("../hall_request_assigner/"+hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
+	ret, err := exec.Command("assigner/executables/"+hraExecutable, "-i", "--includeCab", string(jsonBytes)).CombinedOutput()
 	if err != nil {
 		fmt.Println("exec.Command error: ", err)
 		fmt.Println(string(ret))
-		return
+		panic("exec.Command error")
 	}
 
-	output := new(map[string][][2]bool)
+	output := new(map[string]elevator.Orders)
 	err = json.Unmarshal(ret, &output)
 	if err != nil {
 		fmt.Println("json.Unmarshal error: ", err)
-		return
+		panic("json.Unmarshal error")
 	}
 
-	fmt.Printf("output: \n")
-	for k, v := range *output {
-		fmt.Printf("%6v :  %+v\n", k, v)
-	}
+	return (*output)[strconv.Itoa(id)]
 }

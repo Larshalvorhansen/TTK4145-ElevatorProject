@@ -5,13 +5,17 @@ import (
 )
 
 const (
-	NumFloors    = 4
-	NumElevators = 3
-	NumButtons   = 3
-	Buffer       = 1024
+	// Change these parameters for custom configurations
+	NumFloors       = 4
+	NumElevators    = 1
+	NumButtons      = 3
+	PeersPortNumber = 58735
+	BcastPortNumber = 58750
 
-	DisconnectTime     = 2 * time.Second
-	DoorOpenDuration   = 3 * time.Second
-	UpdateIntervalTime = 40 * time.Millisecond
-	WatchdogTime       = 4 * time.Second
+	BufferSize = 1024
+
+	DisconnectTime   = 1 * time.Second
+	DoorOpenDuration = 3 * time.Second
+	WatchdogTime     = 4 * time.Second
+	Interval         = 15 * time.Millisecond
 )

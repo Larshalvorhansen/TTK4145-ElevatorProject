@@ -1,11 +1,11 @@
 package bcast
 
 import (
-	"Driver-go/network/conn"
 	"encoding/json"
 	"fmt"
 	"net"
 	"reflect"
+	"Driver-go/network/conn"
 )
 
 const bufSize = 1024
@@ -131,6 +131,7 @@ func checkTypeRecursive(val reflect.Type, offsets []int) {
 			"Channel element type must be supported by JSON, got '%s' instead (nested arg# %v)",
 			val.String(), offsets))
 	case reflect.Map:
+		fmt.Println("her -> ", val)
 		if val.Key().Kind() != reflect.String {
 			panic(fmt.Sprintf(
 				"Channel element type must be supported by JSON, got '%s' instead (map keys must be 'string') (nested arg# %v)",
