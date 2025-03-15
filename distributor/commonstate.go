@@ -3,7 +3,7 @@ package distributor
 import (
 	"Driver-go/config"
 	"Driver-go/elevator"
-	"Driver-go/elevio"
+	"Driver-go/hardware"
 	"Driver-go/network/peers"
 	"reflect"
 )
@@ -29,22 +29,22 @@ type CommonState struct {
 	States       [config.NumElevators]LocalState
 }
 
-func (cs *CommonState) addOrder(newOrder elevio.ButtonEvent, id int) {
-	if newOrder.Button == elevio.BT_Cab {
+func (cs *CommonState) addOrder(newOrder hardware.ButtonEvent, id int) {
+	if newOrder.Button == hardware.BT_Cab {
 		cs.States[id].CabRequests[newOrder.Floor] = true
 	} else {
 		cs.HallRequests[newOrder.Floor][newOrder.Button] = true
 	}
 }
 
-func (cs *CommonState) addCabCall(newOrder elevio.ButtonEvent, id int) {
-	if newOrder.Button == elevio.BT_Cab {
+func (cs *CommonState) addCabCall(newOrder hardware.ButtonEvent, id int) {
+	if newOrder.Button == hardware.BT_Cab {
 		cs.States[id].CabRequests[newOrder.Floor] = true
 	}
 }
 
-func (cs *CommonState) removeOrder(deliveredOrder elevio.ButtonEvent, id int) {
-	if deliveredOrder.Button == elevio.BT_Cab {
+func (cs *CommonState) removeOrder(deliveredOrder hardware.ButtonEvent, id int) {
+	if deliveredOrder.Button == hardware.BT_Cab {
 		cs.States[id].CabRequests[deliveredOrder.Floor] = false
 	} else {
 		cs.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false

@@ -2,7 +2,7 @@ package elevator
 
 import (
 	"Driver-go/config"
-	"Driver-go/elevio"
+	"Driver-go/hardware"
 	"time"
 )
 
@@ -19,10 +19,10 @@ func Door(
 	doorOpenC <-chan bool,
 	obstructedC chan<- bool,
 ) {
-	elevio.SetDoorOpenLamp(false)
+	hardware.SetDoorOpenLamp(false)
 
 	obstructionC := make(chan bool)
-	go elevio.PollObstructionSwitch(obstructionC)
+	go hardware.PollObstructionSwitch(obstructionC)
 
 	// Init state
 	obstruction := false
@@ -35,7 +35,7 @@ func Door(
 		select {
 		case obstruction = <-obstructionC:
 			if !obstruction && doorState == Obstructed {
-				elevio.SetDoorOpenLamp(false)
+				hardware.SetDoorOpenLamp(false)
 				doorClosedC <- true
 				doorState = Closed
 			}
@@ -51,7 +51,7 @@ func Door(
 			}
 			switch doorState {
 			case Closed:
-				elevio.SetDoorOpenLamp(true)
+				hardware.SetDoorOpenLamp(true)
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
 				doorState = InCountDown
 			case InCountDown:
@@ -70,7 +70,7 @@ func Door(
 			if obstruction {
 				doorState = Obstructed
 			} else {
-				elevio.SetDoorOpenLamp(false)
+				hardware.SetDoorOpenLamp(false)
 				doorClosedC <- true
 				doorState = Closed
 			}

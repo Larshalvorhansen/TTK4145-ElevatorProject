@@ -1,7 +1,7 @@
 package elevator
 
 import (
-	"Driver-go/elevio"
+	"Driver-go/hardware"
 	"fmt"
 )
 
@@ -13,26 +13,26 @@ const (
 	Down
 )
 
-// Converts Direction to elevio.MotorDirection
-func (d Direction) ToMotorDirection() elevio.MotorDirection {
+// Converts Direction to hardware.MotorDirection
+func (d Direction) ToMotorDirection() hardware.MotorDirection {
 	switch d {
 	case Up:
-		return elevio.MD_Up
+		return hardware.MD_Up
 	case Down:
-		return elevio.MD_Down
+		return hardware.MD_Down
 	default:
 		fmt.Println("Warning: Invalid direction in ToMotorDirection(), returning MD_Stop")
-		return elevio.MD_Stop
+		return hardware.MD_Stop
 	}
 }
 
-// Converts Direction to elevio.ButtonType (used for button events)
-func (d Direction) ToButtonType() elevio.ButtonType {
+// Converts Direction to hardware.ButtonType (used for button events)
+func (d Direction) ToButtonType() hardware.ButtonType {
 	switch d {
 	case Up:
-		return elevio.BT_HallUp
+		return hardware.BT_HallUp
 	case Down:
-		return elevio.BT_HallDown
+		return hardware.BT_HallDown
 	default:
 		fmt.Println("Warning: Invalid direction in ToButtonType(), returning invalid value")
 		return -1 // Invalid ButtonType

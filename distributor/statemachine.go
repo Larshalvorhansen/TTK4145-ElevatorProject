@@ -3,7 +3,7 @@ package distributor
 import (
 	"Driver-go/config"
 	"Driver-go/elevator"
-	"Driver-go/elevio"
+	"Driver-go/hardware"
 	"Driver-go/network/peers"
 	"fmt"
 	"time"
@@ -20,7 +20,7 @@ const (
 
 func Distributor(
 	confirmedCsC chan<- CommonState,
-	deliveredOrderC <-chan elevio.ButtonEvent,
+	deliveredOrderC <-chan hardware.ButtonEvent,
 	newStateC <-chan elevator.State,
 	networkTx chan<- CommonState,
 	networkRx <-chan CommonState,
@@ -28,13 +28,13 @@ func Distributor(
 	id int,
 ) {
 
-	newOrderC := make(chan elevio.ButtonEvent, config.BufferSize)
+	newOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
 
-	go elevio.PollButtons(newOrderC)
+	go hardware.PollButtons(newOrderC)
 
 	var stashType StashType
-	var newOrder elevio.ButtonEvent
-	var deliveredOrder elevio.ButtonEvent
+	var newOrder hardware.ButtonEvent
+	var deliveredOrder hardware.ButtonEvent
 	var newState elevator.State
 	var peers peers.PeerUpdate
 	var cs CommonState

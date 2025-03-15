@@ -5,7 +5,7 @@ import (
 	"Driver-go/config"
 	"Driver-go/distributor"
 	"Driver-go/elevator"
-	"Driver-go/elevio"
+	"Driver-go/hardware"
 	"Driver-go/lamp"
 	"Driver-go/network/bcast"
 	"Driver-go/network/peers"
@@ -23,12 +23,12 @@ func main() {
 	port := *serverPort
 	id := *elevatorId
 
-	elevio.Init("localhost:"+strconv.Itoa(port), config.NumFloors)
+	hardware.Init("localhost:"+strconv.Itoa(port), config.NumFloors)
 
 	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", id, port, config.NumFloors, config.NumElevators)
 
 	newOrderC := make(chan elevator.Orders, config.BufferSize)
-	deliveredOrderC := make(chan elevio.ButtonEvent, config.BufferSize)
+	deliveredOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
 	newStateC := make(chan elevator.State, config.BufferSize)
 	confirmedCommonStateC := make(chan distributor.CommonState, config.BufferSize)
 	networkTxC := make(chan distributor.CommonState, config.BufferSize)
@@ -36,11 +36,24 @@ func main() {
 	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
 	peersTxC := make(chan bool, config.BufferSize)
 
-	go peers.Receiver(config.PeersPortNumber, peersRxC)
-	go peers.Transmitter(config.PeersPortNumber, id, peersTxC)
+	go peers.Receiver(
+		config.PeersPortNumber,
+		peersRxC,
+	)
+	go peers.Transmitter(
+		config.PeersPortNumber,
+		id,
+		peersTxC,
+	)
 
-	go bcast.Receiver(config.BcastPortNumber, networkRxC)
-	go bcast.Transmitter(config.BcastPortNumber, networkTxC)
+	go bcast.Receiver(
+		config.BcastPortNumber,
+		networkRxC,
+	)
+	go bcast.Transmitter(
+		config.BcastPortNumber,
+		networkTxC,
+	)
 
 	go distributor.Distributor(
 		confirmedCommonStateC,

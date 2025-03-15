@@ -2,7 +2,7 @@ package elevator
 
 import (
 	"Driver-go/config"
-	"Driver-go/elevio"
+	"Driver-go/hardware"
 	"fmt"
 	"time"
 )
@@ -33,7 +33,7 @@ func (b Behaviour) ToString() string {
 
 func Elevator(
 	newOrderC <-chan Orders,
-	deliveredOrderC chan<- elevio.ButtonEvent,
+	deliveredOrderC chan<- hardware.ButtonEvent,
 	newStateC chan<- State,
 ) {
 	doorOpenC := make(chan bool, 16)
@@ -43,9 +43,9 @@ func Elevator(
 	motorC := make(chan bool, 16)
 
 	go Door(doorClosedC, doorOpenC, obstructedC)
-	go elevio.PollFloorSensor(floorEnteredC)
+	go hardware.PollFloorSensor(floorEnteredC)
 
-	elevio.SetMotorDirection(elevio.MD_Down)
+	hardware.SetMotorDirection(hardware.MD_Down)
 	state := State{Direction: Down, Behaviour: Moving}
 
 	var orders Orders
@@ -61,21 +61,21 @@ func Elevator(
 			switch state.Behaviour {
 			case Idle:
 				switch {
-				case orders[state.Floor][state.Direction] || orders[state.Floor][elevio.BT_Cab]:
+				case orders[state.Floor][state.Direction] || orders[state.Floor][hardware.BT_Cab]:
 					doorOpenC <- true
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
 					newStateC <- state
 
 				case orders[state.Floor][state.Direction.FlipDirection()]:
 					doorOpenC <- true
 					state.Direction = state.Direction.FlipDirection()
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
 					newStateC <- state
 
 				case orders.OrderInDirection(state.Floor, state.Direction):
-					elevio.SetMotorDirection(state.Direction.ToMotorDirection())
+					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					newStateC <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
@@ -83,7 +83,7 @@ func Elevator(
 
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
-					elevio.SetMotorDirection(state.Direction.ToMotorDirection())
+					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					newStateC <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
@@ -93,9 +93,9 @@ func Elevator(
 
 			case DoorOpen:
 				switch {
-				case orders[state.Floor][elevio.BT_Cab] || orders[state.Floor][state.Direction]:
+				case orders[state.Floor][hardware.BT_Cab] || orders[state.Floor][state.Direction]:
 					doorOpenC <- true
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 				}
 
 			case Moving:
@@ -110,7 +110,7 @@ func Elevator(
 			case DoorOpen:
 				switch {
 				case orders.OrderInDirection(state.Floor, state.Direction):
-					elevio.SetMotorDirection(state.Direction.ToMotorDirection())
+					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
@@ -119,12 +119,12 @@ func Elevator(
 				case orders[state.Floor][state.Direction.FlipDirection()]:
 					doorOpenC <- true
 					state.Direction = state.Direction.FlipDirection()
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					newStateC <- state
 
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
-					elevio.SetMotorDirection(state.Direction.ToMotorDirection())
+					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
@@ -141,7 +141,7 @@ func Elevator(
 
 		// 3) Elevator finds new floor
 		case state.Floor = <-floorEnteredC:
-			elevio.SetFloorIndicator(state.Floor)
+			hardware.SetFloorIndicator(state.Floor)
 			motorTimer.Stop()
 			motorC <- false
 
@@ -149,21 +149,21 @@ func Elevator(
 			case Moving:
 				switch {
 				case orders[state.Floor][state.Direction]:
-					elevio.SetMotorDirection(elevio.MD_Stop)
+					hardware.SetMotorDirection(hardware.MD_Stop)
 					doorOpenC <- true
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
 
-				case orders[state.Floor][elevio.BT_Cab] && orders.OrderInDirection(state.Floor, state.Direction):
-					elevio.SetMotorDirection(elevio.MD_Stop)
+				case orders[state.Floor][hardware.BT_Cab] && orders.OrderInDirection(state.Floor, state.Direction):
+					hardware.SetMotorDirection(hardware.MD_Stop)
 					doorOpenC <- true
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
 
-				case orders[state.Floor][elevio.BT_Cab] && !orders[state.Floor][state.Direction.FlipDirection()]:
-					elevio.SetMotorDirection(elevio.MD_Stop)
+				case orders[state.Floor][hardware.BT_Cab] && !orders[state.Floor][state.Direction.FlipDirection()]:
+					hardware.SetMotorDirection(hardware.MD_Stop)
 					doorOpenC <- true
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
 
 				case orders.OrderInDirection(state.Floor, state.Direction):
@@ -171,20 +171,20 @@ func Elevator(
 					motorC <- false
 
 				case orders[state.Floor][state.Direction.FlipDirection()]:
-					elevio.SetMotorDirection(elevio.MD_Stop)
+					hardware.SetMotorDirection(hardware.MD_Stop)
 					doorOpenC <- true
 					state.Direction = state.Direction.FlipDirection()
-					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
 
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
-					elevio.SetMotorDirection(state.Direction.ToMotorDirection())
+					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
 
 				default:
-					elevio.SetMotorDirection(elevio.MD_Stop)
+					hardware.SetMotorDirection(hardware.MD_Stop)
 					state.Behaviour = Idle
 				}
 
