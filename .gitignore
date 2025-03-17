@@ -1,3 +1,38 @@
+# macOS system files
 .DS_Store
+
+# Vim and editor backups
+*.swp
+*.swo
+
+# Local history and logs
 .history
-.vscode
+*.log
+
+# IDE/editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Old README files if they have specific extensions
+README_20*
+README_backup*
+
+# Node.js dependencies (if applicable)
+node_modules/
+npm-debug.log
+
+# Python cache files (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled binaries and temporary files
+*.o
+*.out
+*.class
+*.exe
+*.tmp
+*.bak

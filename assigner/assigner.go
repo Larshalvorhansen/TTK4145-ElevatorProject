@@ -27,7 +27,7 @@ func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders 
 
 	stateMap := make(map[string]HRAState)
 	for i, v := range cs.States {
-		if cs.Ackmap[i] == distributor.NotAvailable || v.State.Motorstop { // removed the additional "... || v.State,Obstructed" for single elevator use
+		if cs.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
