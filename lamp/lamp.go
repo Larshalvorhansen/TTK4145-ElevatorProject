@@ -6,13 +6,13 @@ import (
 	"Driver-go/hardware"
 )
 
-func SetLamps(commonState distributor.CommonState, elevatorID int) {
+func SetLamps(systemView distributor.SystemView, elevatorID int) {
 	for floor := 0; floor < config.NumFloors; floor++ {
 		for btn := 0; btn < 2; btn++ {
-			hardware.SetButtonLamp(hardware.ButtonType(btn), floor, commonState.HallRequests[floor][btn])
+			hardware.SetButtonLamp(hardware.ButtonType(btn), floor, systemView.HallRequests[floor][btn])
 		}
 	}
 	for floor := 0; floor < config.NumFloors; floor++ {
-		hardware.SetButtonLamp(hardware.BT_Cab, floor, commonState.States[elevatorID].CabRequests[floor])
+		hardware.SetButtonLamp(hardware.BT_Cab, floor, systemView.ElevatorStates[elevatorID].CabRequests[floor])
 	}
 }

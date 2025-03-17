@@ -32,12 +32,12 @@ func SendOrderDone(
 	floor int,
 	dir Direction,
 	o Orders,
-	orderDoneC chan<- hardware.ButtonEvent,
+	orderDoneCh chan<- hardware.ButtonEvent,
 ) {
 	if o[floor][hardware.BT_Cab] {
-		orderDoneC <- hardware.ButtonEvent{Floor: floor, Button: hardware.BT_Cab}
+		orderDoneCh <- hardware.ButtonEvent{Floor: floor, Button: hardware.BT_Cab}
 	}
 	if o[floor][dir] {
-		orderDoneC <- hardware.ButtonEvent{Floor: floor, Button: dir.ToButtonType()}
+		orderDoneCh <- hardware.ButtonEvent{Floor: floor, Button: dir.ToButtonType()}
 	}
 }

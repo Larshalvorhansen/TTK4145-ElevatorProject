@@ -32,18 +32,18 @@ func (b Behaviour) ToString() string {
 }
 
 func Elevator(
-	newOrderC <-chan Orders,
-	deliveredOrderC chan<- hardware.ButtonEvent,
-	newStateC chan<- State,
+	newOrderCh <-chan Orders,
+	deliveredOrderCh chan<- hardware.ButtonEvent,
+	newElevStateCh chan<- State,
 ) {
-	doorOpenC := make(chan bool, 16)
-	doorClosedC := make(chan bool, 16)
-	floorEnteredC := make(chan int)
-	obstructedC := make(chan bool, 16)
-	motorC := make(chan bool, 16)
+	doorOpenCh := make(chan bool, 16)
+	doorClosedCh := make(chan bool, 16)
+	floorEnteredCh := make(chan int)
+	obstructedCh := make(chan bool, 16)
+	motorCh := make(chan bool, 16)
 
-	go Door(doorClosedC, doorOpenC, obstructedC)
-	go hardware.PollFloorSensor(floorEnteredC)
+	go Door(doorClosedCh, doorOpenCh, obstructedCh)
+	go hardware.PollFloorSensor(floorEnteredCh)
 
 	hardware.SetMotorDirection(hardware.MD_Down)
 	state := State{Direction: Down, Behaviour: Moving}
@@ -57,45 +57,45 @@ func Elevator(
 		select {
 
 		// 1) New order incoming
-		case orders = <-newOrderC:
+		case orders = <-newOrderCh:
 			switch state.Behaviour {
 			case Idle:
 				switch {
 				case orders[state.Floor][state.Direction] || orders[state.Floor][hardware.BT_Cab]:
-					doorOpenC <- true
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					doorOpenCh <- true
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
-					newStateC <- state
+					newElevStateCh <- state
 
 				case orders[state.Floor][state.Direction.FlipDirection()]:
-					doorOpenC <- true
+					doorOpenCh <- true
 					state.Direction = state.Direction.FlipDirection()
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
-					newStateC <- state
+					newElevStateCh <- state
 
 				case orders.OrderInDirection(state.Floor, state.Direction):
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
-					newStateC <- state
+					newElevStateCh <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorC <- false
+					motorCh <- false
 
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
-					newStateC <- state
+					newElevStateCh <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorC <- false
+					motorCh <- false
 				default:
 				}
 
 			case DoorOpen:
 				switch {
 				case orders[state.Floor][hardware.BT_Cab] || orders[state.Floor][state.Direction]:
-					doorOpenC <- true
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					doorOpenCh <- true
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 				}
 
 			case Moving:
@@ -105,7 +105,7 @@ func Elevator(
 			}
 
 		// 2) Door closes
-		case <-doorClosedC:
+		case <-doorClosedCh:
 			switch state.Behaviour {
 			case DoorOpen:
 				switch {
@@ -113,26 +113,26 @@ func Elevator(
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorC <- false
-					newStateC <- state
+					motorCh <- false
+					newElevStateCh <- state
 
 				case orders[state.Floor][state.Direction.FlipDirection()]:
-					doorOpenC <- true
+					doorOpenCh <- true
 					state.Direction = state.Direction.FlipDirection()
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
-					newStateC <- state
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
+					newElevStateCh <- state
 
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorC <- false
-					newStateC <- state
+					motorCh <- false
+					newElevStateCh <- state
 
 				default:
 					state.Behaviour = Idle
-					newStateC <- state
+					newElevStateCh <- state
 				}
 
 			default:
@@ -140,48 +140,48 @@ func Elevator(
 			}
 
 		// 3) Elevator finds new floor
-		case state.Floor = <-floorEnteredC:
+		case state.Floor = <-floorEnteredCh:
 			hardware.SetFloorIndicator(state.Floor)
 			motorTimer.Stop()
-			motorC <- false
+			motorCh <- false
 
 			switch state.Behaviour {
 			case Moving:
 				switch {
 				case orders[state.Floor][state.Direction]:
 					hardware.SetMotorDirection(hardware.MD_Stop)
-					doorOpenC <- true
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					doorOpenCh <- true
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
 
 				case orders[state.Floor][hardware.BT_Cab] && orders.OrderInDirection(state.Floor, state.Direction):
 					hardware.SetMotorDirection(hardware.MD_Stop)
-					doorOpenC <- true
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					doorOpenCh <- true
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
 
 				case orders[state.Floor][hardware.BT_Cab] && !orders[state.Floor][state.Direction.FlipDirection()]:
 					hardware.SetMotorDirection(hardware.MD_Stop)
-					doorOpenC <- true
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					doorOpenCh <- true
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
 
 				case orders.OrderInDirection(state.Floor, state.Direction):
 					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorC <- false
+					motorCh <- false
 
 				case orders[state.Floor][state.Direction.FlipDirection()]:
 					hardware.SetMotorDirection(hardware.MD_Stop)
-					doorOpenC <- true
+					doorOpenCh <- true
 					state.Direction = state.Direction.FlipDirection()
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
+					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
 
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorC <- false
+					motorCh <- false
 
 				default:
 					hardware.SetMotorDirection(hardware.MD_Stop)
@@ -191,29 +191,29 @@ func Elevator(
 			default:
 				panic("FloorEntered in wrong state")
 			}
-			newStateC <- state
+			newElevStateCh <- state
 
 		// 4) MOTOR‐WATCHDOG time gone out
 		case <-motorTimer.C:
 			if !state.Motorstatus {
 				fmt.Println("Lost motor power")
 				state.Motorstatus = true
-				newStateC <- state
+				newElevStateCh <- state
 			}
 
 		// 5) Obstruction
-		case obstruction := <-obstructedC:
+		case obstruction := <-obstructedCh:
 			if obstruction != state.Obstructed {
 				state.Obstructed = obstruction
-				newStateC <- state
+				newElevStateCh <- state
 			}
 
 		// 6) Motor reinitialized
-		case motor := <-motorC:
+		case motor := <-motorCh:
 			if state.Motorstatus {
 				fmt.Println("Regained motor power")
 				state.Motorstatus = motor
-				newStateC <- state
+				newElevStateCh <- state
 			}
 		}
 	}

@@ -21,81 +21,81 @@ type LocalState struct {
 	CabRequests [config.NumFloors]bool
 }
 
-type CommonState struct {
-	SeqNum       int
-	Origin       int
-	Ackmap       [config.NumElevators]AckStatus
-	HallRequests [config.NumFloors][2]bool
-	States       [config.NumElevators]LocalState
+type SystemView struct {
+	SeqNum         int
+	Origin         int
+	Ackmap         [config.NumElevators]AckStatus
+	HallRequests   [config.NumFloors][2]bool
+	ElevatorStates [config.NumElevators]LocalState
 }
 
-func (cs *CommonState) addOrder(newOrder hardware.ButtonEvent, id int) {
+func (systemView *SystemView) addOrder(newOrder hardware.ButtonEvent, id int) {
 	if newOrder.Button == hardware.BT_Cab {
-		cs.States[id].CabRequests[newOrder.Floor] = true
+		systemView.ElevatorStates[id].CabRequests[newOrder.Floor] = true
 	} else {
-		cs.HallRequests[newOrder.Floor][newOrder.Button] = true
+		systemView.HallRequests[newOrder.Floor][newOrder.Button] = true
 	}
 }
 
-func (cs *CommonState) addCabCall(newOrder hardware.ButtonEvent, id int) {
+func (systemView *SystemView) addCabCall(newOrder hardware.ButtonEvent, id int) {
 	if newOrder.Button == hardware.BT_Cab {
-		cs.States[id].CabRequests[newOrder.Floor] = true
+		systemView.ElevatorStates[id].CabRequests[newOrder.Floor] = true
 	}
 }
 
-func (cs *CommonState) removeOrder(deliveredOrder hardware.ButtonEvent, id int) {
+func (systemView *SystemView) removeOrder(deliveredOrder hardware.ButtonEvent, id int) {
 	if deliveredOrder.Button == hardware.BT_Cab {
-		cs.States[id].CabRequests[deliveredOrder.Floor] = false
+		systemView.ElevatorStates[id].CabRequests[deliveredOrder.Floor] = false
 	} else {
-		cs.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false
+		systemView.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false
 	}
 }
 
-func (cs *CommonState) updateState(newState elevator.State, id int) {
-	cs.States[id] = LocalState{
+func (systemView *SystemView) updateState(newState elevator.State, id int) {
+	systemView.ElevatorStates[id] = LocalState{
 		State:       newState,
-		CabRequests: cs.States[id].CabRequests,
+		CabRequests: systemView.ElevatorStates[id].CabRequests,
 	}
 }
 
-func (cs *CommonState) fullyAcked(id int) bool {
-	if cs.Ackmap[id] == NotAvailable {
+func (systemView *SystemView) fullyAcked(id int) bool {
+	if systemView.Ackmap[id] == NotAvailable {
 		return false
 	}
-	for index := range cs.Ackmap {
-		if cs.Ackmap[index] == NotAcked {
+	for index := range systemView.Ackmap {
+		if systemView.Ackmap[index] == NotAcked {
 			return false
 		}
 	}
 	return true
 }
 
-func (oldCs CommonState) equals(newCs CommonState) bool {
-	oldCs.Ackmap = [config.NumElevators]AckStatus{}
-	newCs.Ackmap = [config.NumElevators]AckStatus{}
-	return reflect.DeepEqual(oldCs, newCs)
+func (oldSystemView SystemView) equals(newSystemView SystemView) bool {
+	oldSystemView.Ackmap = [config.NumElevators]AckStatus{}
+	newSystemView.Ackmap = [config.NumElevators]AckStatus{}
+	return reflect.DeepEqual(oldSystemView, newSystemView)
 }
 
-func (cs *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
+func (systemView *SystemView) makeLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, id := range peers.Lost {
-		cs.Ackmap[id] = NotAvailable
+		systemView.Ackmap[id] = NotAvailable
 	}
 }
 
-func (cs *CommonState) makeOthersUnavailable(id int) {
-	for elev := range cs.Ackmap {
+func (systemView *SystemView) makeOthersUnavailable(id int) {
+	for elev := range systemView.Ackmap {
 		if elev != id {
-			cs.Ackmap[elev] = NotAvailable
+			systemView.Ackmap[elev] = NotAvailable
 		}
 	}
 }
 
-func (cs *CommonState) prepNewCs(id int) {
-	cs.SeqNum++
-	cs.Origin = id
-	for id := range cs.Ackmap {
-		if cs.Ackmap[id] == Acked {
-			cs.Ackmap[id] = NotAcked
+func (systemView *SystemView) prepNewSV(id int) {
+	systemView.SeqNum++
+	systemView.Origin = id
+	for id := range systemView.Ackmap {
+		if systemView.Ackmap[id] == Acked {
+			systemView.Ackmap[id] = NotAcked
 		}
 	}
 }

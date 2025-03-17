@@ -27,53 +27,53 @@ func main() {
 
 	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", id, port, config.NumFloors, config.NumElevators)
 
-	newOrderC := make(chan elevator.Orders, config.BufferSize)
-	deliveredOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
-	newStateC := make(chan elevator.State, config.BufferSize)
-	confirmedCommonStateC := make(chan distributor.CommonState, config.BufferSize)
-	networkTxC := make(chan distributor.CommonState, config.BufferSize)
-	networkRxC := make(chan distributor.CommonState, config.BufferSize)
-	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
-	peersTxC := make(chan bool, config.BufferSize)
+	newOrderCh := make(chan elevator.Orders, config.BufferSize)
+	deliveredOrderCh := make(chan hardware.ButtonEvent, config.BufferSize)
+	newElevStateCh := make(chan elevator.State, config.BufferSize)
+	confirmedSVCh := make(chan distributor.SystemView, config.BufferSize)
+	networkTxSVCh := make(chan distributor.SystemView, config.BufferSize)
+	networkRxSVCh := make(chan distributor.SystemView, config.BufferSize)
+	peersRxCh := make(chan peers.PeerUpdate, config.BufferSize)
+	peersTxCh := make(chan bool, config.BufferSize)
 
 	go peers.Receiver(
 		config.PeersPortNumber,
-		peersRxC,
+		peersRxCh,
 	)
 	go peers.Transmitter(
 		config.PeersPortNumber,
 		id,
-		peersTxC,
+		peersTxCh,
 	)
 
 	go bcast.Receiver(
 		config.BcastPortNumber,
-		networkRxC,
+		networkRxSVCh,
 	)
 	go bcast.Transmitter(
 		config.BcastPortNumber,
-		networkTxC,
+		networkTxSVCh,
 	)
 
 	go distributor.Distributor(
-		confirmedCommonStateC,
-		deliveredOrderC,
-		newStateC,
-		networkTxC,
-		networkRxC,
-		peersRxC,
+		confirmedSVCh,
+		deliveredOrderCh,
+		newElevStateCh,
+		networkTxSVCh,
+		networkRxSVCh,
+		peersRxCh,
 		id)
 
 	go elevator.Elevator(
-		newOrderC,
-		deliveredOrderC,
-		newStateC)
+		newOrderCh,
+		deliveredOrderCh,
+		newElevStateCh)
 
 	for {
 		select {
-		case commonState := <-confirmedCommonStateC:
-			newOrderC <- assigner.CalculateOptimalOrders(commonState, id)
-			lamp.SetLamps(commonState, id)
+		case systemView := <-confirmedSVCh:
+			newOrderCh <- assigner.CalculateOptimalOrders(systemView, id)
+			lamp.SetLamps(systemView, id)
 
 		default:
 			continue

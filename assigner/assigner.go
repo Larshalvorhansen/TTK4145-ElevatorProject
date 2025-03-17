@@ -11,6 +11,8 @@ import (
 	"strconv"
 )
 
+// HRA = Hall Request Assigner
+
 type HRAState struct {
 	Behaviour   string                 `json:"behaviour"`
 	Floor       int                    `json:"floor"`
@@ -23,11 +25,11 @@ type HRAInput struct {
 	States       map[string]HRAState       `json:"states"`
 }
 
-func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders {
+func CalculateOptimalOrders(sv distributor.SystemView, id int) elevator.Orders {
 
 	stateMap := make(map[string]HRAState)
-	for i, v := range cs.States {
-		if cs.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
+	for i, v := range sv.ElevatorStates {
+		if sv.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
@@ -45,7 +47,7 @@ func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders 
 		panic("no elevator states available for assignment!")
 	}
 
-	hraInput := HRAInput{cs.HallRequests, stateMap}
+	hraInput := HRAInput{sv.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {
