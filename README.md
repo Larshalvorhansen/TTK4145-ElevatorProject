@@ -26,3 +26,33 @@ Although we have made some minor modifications, the module is mostly unchanged.
 
 ### **config**
 Stores configuration parameters that several modules use, e.g. number of floors.
+
+| Sjekkliste                                                                                       | ja/nei  |
+| ------------------------------------------------------------------------------------------------ | ------- |
+| Hall-knappen lyser når trykket på                                                                | ja      |
+| Heis ankommer etasjen etter hall-knapp er trykket                                                | kanskje |
+| Cab-knappen lyser når trykket på                                                                 | kanskje |
+| Heis tar imot cab-kall og kjører til riktig etasje                                               | kanskje |
+| Heis mister ikke noen kall (hall eller cab)                                                      | kanskje |
+| Heis fortsetter å fungere ved nettverksbrudd                                                     | kanskje |
+| Heis fortsetter å fungere ved strømbrudd                                                         | kanskje |
+| Heis fullfører cab-kall etter strøm/nettverk kommer tilbake                                      | kanskje |
+| Heis håndterer feil innen noen sekunder (ikke minutter)                                          | kanskje |
+| Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | kanskje |
+| Heis tar fortsatt nye cab-kall ved nettverksbrudd                                                | kanskje |
+| Heis trenger ikke manuell restart etter strøm/nettverk går tilbake                               | kanskje |
+| Hall-knapper på forskjellige arbeidsstasjoner viser samme lys under normale forhold              | kanskje |
+| Minst én hall-knapp viser riktig lys ved pakketap                                                | kanskje |
+| Cab-knappelysene er ikke delt mellom heiser                                                      | kanskje |
+| Knappelys skrur seg på raskt etter trykk                                                         | kanskje |
+| Knappelys skrur seg av når kallet er utført                                                      | kanskje |
+| Døren åpner seg når heisen stopper på etasjen                                                    | kanskje |
+| “Dør åpen”-lampen er tent når døren er åpen                                                      | kanskje |
+| Døren lukker seg ikke mens heisen beveger seg                                                    | kanskje |
+| Døren holder seg åpen i 3 sekunder på etasjen                                                    | kanskje |
+| Døren lukker seg ikke hvis en hindring er til stede                                              | kanskje |
+| Heisen stopper ikke på hver etasje unødvendig                                                    | kanskje |
+| Hall-knappelyset slukker når heis ankommer riktig retning                                        | kanskje |
+| Heisen skifter ikke retning unødvendig                                                           | kanskje |
+| Heisen annonserer retning korrekt (opp/ned)                                                      | kanskje |
+| Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
