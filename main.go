@@ -11,11 +11,34 @@ import (
 	"Driver-go/network/peers"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+	"os/signal"
 	"strconv"
+	"syscall"
 )
 
-func main() {
+// StartNewTerminal åpner et nytt terminalvindu og kjører "main.go" på nytt
+func StartNewTerminal() {
+	cmd := exec.Command("gnome-terminal", "--", "go", "run", "main.go")
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("Feil ved åpning av nytt terminalvindu:", err)
+	}
+}
 
+// MonitorSigInt lytter etter SIGINT-signal (Ctrl+C) og starter et nytt terminalvindu med "main.go"
+func MonitorSigInt() {
+	// Lytter etter SIGINT (Ctrl+C) eller SIGTERM (hvis prosessen stopper)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Når signalet fanges, start et nytt terminalvindu
+	<-sigChan
+	StartNewTerminal()
+}
+
+func main() {
 	serverPort := flag.Int("port", 15657, "Elevator server port (default: 15657)")
 	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
@@ -35,6 +58,9 @@ func main() {
 	networkRxC := make(chan distributor.CommonState, config.BufferSize)
 	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
 	peersTxC := make(chan bool, config.BufferSize)
+
+	// Start signal monitor i en egen goroutine for å håndtere avbrudd
+	go MonitorSigInt()
 
 	go peers.Receiver(
 		config.PeersPortNumber,
