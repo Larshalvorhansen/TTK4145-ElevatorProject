@@ -36,3 +36,4 @@ __pycache__/
 *.exe
 *.tmp
 *.bak
+.DS_Store
