@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-//TODO: Check if the logic on state.Motorstop is correct. True if motor is stopped, false if motor is running?
-
 type State struct {
 	Obstructed  bool
 	Motorstatus bool
