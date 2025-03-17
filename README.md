@@ -2,7 +2,7 @@
 
 This is the repo for the elevator project, group 15
 
-The project aims to implement an elevator control system in Go using a peer-to-peer system with UDP broadcasting for communication, which should be able to control 3 elevators over 4 floors in a reasonable way according to the given specification. The system consists of several modules which handles different functionalities of the system, ranging from communication between elevators to assigning hallorders to different elevators or turing on/off lights. Below is a desciption of each module:
+The project aims to implement an elevator control system in Go using a **peer-to-peer** system with UDP broadcasting for communication, which should be able to control 3 elevators over 4 floors in a reasonable way according to the given specification. The system consists of several modules which handles different functionalities of the system, ranging from communication between elevators to assigning hallorders to different elevators or turing on/off lights. Below is a desciption of each module:
 
 ## Modules
 
