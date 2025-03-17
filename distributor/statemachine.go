@@ -109,7 +109,7 @@ func Distributor(
 				}
 
 			case newOrder := <-newOrderC:
-				if !cs.States[id].State.Motorstop {
+				if !cs.States[id].State.Motorstatus {
 					cs.Ackmap[id] = Acked
 					cs.addCabCall(newOrder, id)
 					confirmedCsC <- cs
@@ -121,7 +121,7 @@ func Distributor(
 				confirmedCsC <- cs
 
 			case newState := <-newStateC:
-				if !(newState.Obstructed || newState.Motorstop) {
+				if !(newState.Obstructed || newState.Motorstatus) {
 					cs.Ackmap[id] = Acked
 					cs.updateState(newState, id)
 					confirmedCsC <- cs

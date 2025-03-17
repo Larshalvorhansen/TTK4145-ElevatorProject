@@ -26,8 +26,8 @@ type HRAInput struct {
 func CalculateOptimalOrders(commonState distributor.CommonState, id int) elevator.Orders {
 
 	stateMap := make(map[string]HRAState)
-	for i, v := range commonState.States {
-		if commonState.Ackmap[i] == distributor.NotAvailable || v.State.Motorstop { // removed the additional "... || v.State,Obstructed" for single elevator use
+	for i, v := range cs.States {
+		if cs.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{

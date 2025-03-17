@@ -8,11 +8,11 @@ import (
 )
 
 type State struct {
-	Obstructed bool
-	Motorstop  bool
-	Behaviour  Behaviour
-	Floor      int
-	Direction  Direction
+	Obstructed  bool
+	Motorstatus bool
+	Behaviour   Behaviour
+	Floor       int
+	Direction   Direction
 }
 
 type Behaviour int
@@ -195,9 +195,9 @@ func Elevator(
 
 		// 4) MOTOR‐WATCHDOG time gone out
 		case <-motorTimer.C:
-			if !state.Motorstop {
+			if !state.Motorstatus {
 				fmt.Println("Lost motor power")
-				state.Motorstop = true
+				state.Motorstatus = true
 				newStateC <- state
 			}
 
@@ -210,9 +210,9 @@ func Elevator(
 
 		// 6) Motor reinitialized
 		case motor := <-motorC:
-			if state.Motorstop {
+			if state.Motorstatus {
 				fmt.Println("Regained motor power")
-				state.Motorstop = motor
+				state.Motorstatus = motor
 				newStateC <- state
 			}
 		}
