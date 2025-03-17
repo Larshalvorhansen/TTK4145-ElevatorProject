@@ -56,3 +56,5 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Heisen skifter ikke retning unødvendig                                                           | kanskje |
 | Heisen annonserer retning korrekt (opp/ned)                                                      | kanskje |
 | Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
+
+minitest
