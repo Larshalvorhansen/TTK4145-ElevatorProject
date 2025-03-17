@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+// logEvent: En hjelpefunksjon for å skrive ut viktige hendelser
+func logEvent(format string, args ...interface{}) {
+	fmt.Printf("[Elevator] "+format+"\n", args...)
+}
+
 type State struct {
 	Obstructed  bool
 	Motorstatus bool
@@ -53,11 +58,14 @@ func Elevator(
 	motorTimer := time.NewTimer(config.WatchdogTime)
 	motorTimer.Stop()
 
+	logEvent("Starting elevator in state: %s", state.Behaviour.ToString()) // For debugging
+
 	for {
 		select {
 
 		// 1) New order incoming
 		case orders = <-newOrderC:
+			logEvent("New order received") // For debugging
 			switch state.Behaviour {
 			case Idle:
 				switch {
@@ -106,6 +114,7 @@ func Elevator(
 
 		// 2) Door closes
 		case <-doorClosedC:
+			logEvent("Door closed at floor %d", state.Floor) // For debugging
 			switch state.Behaviour {
 			case DoorOpen:
 				switch {
@@ -141,6 +150,7 @@ func Elevator(
 
 		// 3) Elevator finds new floor
 		case state.Floor = <-floorEnteredC:
+			logEvent("Arrived at floor %d", state.Floor) // For debugging
 			hardware.SetFloorIndicator(state.Floor)
 			motorTimer.Stop()
 			motorC <- false
@@ -196,7 +206,8 @@ func Elevator(
 		// 4) MOTOR‐WATCHDOG time gone out
 		case <-motorTimer.C:
 			if !state.Motorstatus {
-				fmt.Println("Lost motor power")
+				logEvent("WARNING: Lost motor power!") // For debugging
+				// fmt.Println("Lost motor power")
 				state.Motorstatus = true
 				newStateC <- state
 			}
@@ -205,13 +216,19 @@ func Elevator(
 		case obstruction := <-obstructedC:
 			if obstruction != state.Obstructed {
 				state.Obstructed = obstruction
+				if obstruction {
+					logEvent("Obstruction detected!") // For debugging
+				} else {
+					logEvent("Obstruction cleared") // For debugging
+				}
 				newStateC <- state
 			}
 
 		// 6) Motor reinitialized
 		case motor := <-motorC:
 			if state.Motorstatus {
-				fmt.Println("Regained motor power")
+				logEvent("Motor power restored") // For debugging
+				// fmt.Println("Regained motor power")
 				state.Motorstatus = motor
 				newStateC <- state
 			}
