@@ -30,19 +30,19 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Sjekkliste                                                                                       | ja/nei  |
 | ------------------------------------------------------------------------------------------------ | ------- |
 | Hall-knappen lyser når trykket på                                                                | ja      |
-| Heis ankommer etasjen etter hall-knapp er trykket                                                | kanskje |
-| Cab-knappen lyser når trykket på                                                                 | kanskje |
-| Heis tar imot cab-kall og kjører til riktig etasje                                               | kanskje |
-| Heis mister ikke noen kall (hall eller cab)                                                      | kanskje |
+| Heis ankommer etasjen etter hall-knapp er trykket                                                | ja |
+| Cab-knappen lyser når trykket på                                                                 | ja |
+| Heis tar imot cab-kall og kjører til riktig etasje                                               | ja |
+| Heis mister ikke noen kall (hall eller cab)                                                      | ja |
 | Heis fortsetter å fungere ved nettverksbrudd                                                     | kanskje |
-| Heis fortsetter å fungere ved strømbrudd                                                         | kanskje |
-| Heis fullfører cab-kall etter strøm/nettverk kommer tilbake                                      | kanskje |
-| Heis håndterer feil innen noen sekunder (ikke minutter)                                          | kanskje |
-| Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | kanskje |
-| Heis tar fortsatt nye cab-kall ved nettverksbrudd                                                | kanskje |
-| Heis trenger ikke manuell restart etter strøm/nettverk går tilbake                               | kanskje |
-| Hall-knapper på forskjellige arbeidsstasjoner viser samme lys under normale forhold              | kanskje |
-| Minst én hall-knapp viser riktig lys ved pakketap                                                | kanskje |
+| Heis fortsetter å fungere ved strømbrudd                                                         | ja? |
+| Heis fullfører cab-kall etter strøm/nettverk kommer tilbake                                      | ja |
+| Heis håndterer feil innen noen sekunder (ikke minutter)                                          | kankskje |
+| Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | nei? |
+| Heis tar fortsatt nye cab-kall ved nettverksbrudd                                                | usikker |
+| Heis trenger ikke manuell restart etter strøm/nettverk går tilbake                               | nei |
+| Hall-knapper på forskjellige arbeidsstasjoner viser samme lys under normale forhold              | ja |
+| Minst én hall-knapp viser riktig lys ved pakketap                                                | ja |
 | Cab-knappelysene er ikke delt mellom heiser                                                      | kanskje |
 | Knappelys skrur seg på raskt etter trykk                                                         | kanskje |
 | Knappelys skrur seg av når kallet er utført                                                      | kanskje |
@@ -56,3 +56,5 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Heisen skifter ikke retning unødvendig                                                           | kanskje |
 | Heisen annonserer retning korrekt (opp/ned)                                                      | kanskje |
 | Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
+
+minitest
