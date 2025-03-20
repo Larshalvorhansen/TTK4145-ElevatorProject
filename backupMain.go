@@ -22,7 +22,7 @@ import (
 )
 
 const filename = "state.csv"
-const restartProgram = "backupMain.go"
+const restartProgram = "main.go"
 
 func openTerminalAndRun(command string, port, id int) {
 	var cmd *exec.Cmd
