@@ -3,7 +3,7 @@ package main
 import (
 	"Driver-go/assigner"
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/coordinator"
 	"Driver-go/elevator"
 	"Driver-go/hardware"
 	"Driver-go/lamp"
@@ -30,9 +30,9 @@ func main() {
 	newOrderC := make(chan elevator.Orders, config.BufferSize)
 	deliveredOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
 	newStateC := make(chan elevator.State, config.BufferSize)
-	confirmedCommonStateC := make(chan distributor.CommonState, config.BufferSize)
-	networkTxC := make(chan distributor.CommonState, config.BufferSize)
-	networkRxC := make(chan distributor.CommonState, config.BufferSize)
+	confirmedCommonStateC := make(chan coordinator.SharedState, config.BufferSize)
+	networkTxC := make(chan coordinator.SharedState, config.BufferSize)
+	networkRxC := make(chan coordinator.SharedState, config.BufferSize)
 	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
 	peersTxC := make(chan bool, config.BufferSize)
 
@@ -55,7 +55,7 @@ func main() {
 		networkTxC,
 	)
 
-	go distributor.Distributor(
+	go coordinator.Distributor(
 		confirmedCommonStateC,
 		deliveredOrderC,
 		newStateC,

@@ -1,8 +1,11 @@
+// TODO: check iota constants, if they are exported capitalize firt letter, if not, keep it lowercase in first letter
+
 package elevator
 
 import (
 	"Driver-go/config"
 	"Driver-go/hardware"
+	"log"
 	"time"
 )
 
@@ -14,7 +17,7 @@ const (
 	Obstructed
 )
 
-func Door(
+func DoorLogic(
 	doorClosedC chan<- bool,
 	doorOpenC <-chan bool,
 	obstructedC chan<- bool,
@@ -24,26 +27,22 @@ func Door(
 	obstructionC := make(chan bool)
 	go hardware.PollObstructionSwitch(obstructionC)
 
-	// Init state
 	obstruction := false
 	doorState := Closed
 
-	timeCounter := time.NewTimer(time.Hour)
-	timeCounter.Stop()
+	timer := time.NewTimer(time.Hour)
+	timer.Stop()
 
 	for {
 		select {
 		case obstruction = <-obstructionC:
 			if !obstruction && doorState == Obstructed {
+				log.Println("Door no longer obstructed, closing now")
 				hardware.SetDoorOpenLamp(false)
 				doorClosedC <- true
 				doorState = Closed
 			}
-			if obstruction {
-				obstructedC <- true
-			} else {
-				obstructedC <- false
-			}
+			obstructedC <- obstruction
 
 		case <-doorOpenC:
 			if obstruction {
@@ -52,22 +51,29 @@ func Door(
 			switch doorState {
 			case Closed:
 				hardware.SetDoorOpenLamp(true)
-				timeCounter = time.NewTimer(config.DoorOpenDuration)
+				timer = time.NewTimer(config.DoorOpenDuration)
 				doorState = InCountDown
+
 			case InCountDown:
-				timeCounter = time.NewTimer(config.DoorOpenDuration)
+				timer.Stop()
+				timer = time.NewTimer(config.DoorOpenDuration)
 
 			case Obstructed:
-				timeCounter = time.NewTimer(config.DoorOpenDuration)
+				log.Println("Door was obstructed, resuming countdown")
+				timer.Stop()
+				timer = time.NewTimer(config.DoorOpenDuration)
 				doorState = InCountDown
+
 			default:
 				panic("Door state not implemented")
 			}
-		case <-timeCounter.C:
+
+		case <-timer.C:
 			if doorState != InCountDown {
 				panic("Door state not implemented")
 			}
 			if obstruction {
+				log.Println("Door is obstructed, keeping it open")
 				doorState = Obstructed
 			} else {
 				hardware.SetDoorOpenLamp(false)

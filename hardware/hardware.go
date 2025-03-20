@@ -1,18 +1,19 @@
+// TODO: check iota constants, if they are exported capitalize firt letter, if not, keep it lowercase in first letter
+
 package hardware
 
-import "time"
-import "sync"
-import "net"
-import "fmt"
+import (
+	"Driver-go/config"
+	"fmt"
+	"net"
+	"sync"
+	"time"
+)
 
-
-
-const _pollRate = 20 * time.Millisecond
-
-var _initialized    bool = false
-var _numFloors      int = 4
-var _mtx            sync.Mutex
-var _conn           net.Conn
+var _initialized bool = false
+var _numFloors int = 4
+var _mtx sync.Mutex
+var _conn net.Conn
 
 type MotorDirection int
 
@@ -35,8 +36,6 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
-
-
 func Init(addr string, numFloors int) {
 	if _initialized {
 		fmt.Println("Driver already initialized!")
@@ -51,8 +50,6 @@ func Init(addr string, numFloors int) {
 	}
 	_initialized = true
 }
-
-
 
 func SetMotorDirection(dir MotorDirection) {
 	write([4]byte{1, byte(dir), 0, 0})
@@ -74,12 +71,10 @@ func SetStopLamp(value bool) {
 	write([4]byte{5, toByte(value), 0, 0})
 }
 
-
-
 func PollButtons(receiver chan<- ButtonEvent) {
 	prev := make([][3]bool, _numFloors)
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		for f := 0; f < _numFloors; f++ {
 			for b := ButtonType(0); b < 3; b++ {
 				v := GetButton(b, f)
@@ -95,7 +90,7 @@ func PollButtons(receiver chan<- ButtonEvent) {
 func PollFloorSensor(receiver chan<- int) {
 	prev := -1
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		v := GetFloor()
 		if v != prev && v != -1 {
 			receiver <- v
@@ -107,7 +102,7 @@ func PollFloorSensor(receiver chan<- int) {
 func PollStopButton(receiver chan<- bool) {
 	prev := false
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		v := GetStop()
 		if v != prev {
 			receiver <- v
@@ -119,7 +114,7 @@ func PollStopButton(receiver chan<- bool) {
 func PollObstructionSwitch(receiver chan<- bool) {
 	prev := false
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		v := GetObstruction()
 		if v != prev {
 			receiver <- v
@@ -127,9 +122,6 @@ func PollObstructionSwitch(receiver chan<- bool) {
 		prev = v
 	}
 }
-
-
-
 
 func GetButton(button ButtonType, floor int) bool {
 	a := read([4]byte{6, byte(button), byte(floor), 0})
@@ -155,32 +147,33 @@ func GetObstruction() bool {
 	return toBool(a[1])
 }
 
-
-
-
-
 func read(in [4]byte) [4]byte {
 	_mtx.Lock()
 	defer _mtx.Unlock()
-	
+
 	_, err := _conn.Write(in[:])
-	if err != nil { panic("Lost connection to Elevator Server") }
-	
+	if err != nil {
+		panic("Lost connection to Elevator Server")
+	}
+
 	var out [4]byte
 	_, err = _conn.Read(out[:])
-	if err != nil { panic("Lost connection to Elevator Server") }
-	
+	if err != nil {
+		panic("Lost connection to Elevator Server")
+	}
+
 	return out
 }
 
 func write(in [4]byte) {
 	_mtx.Lock()
 	defer _mtx.Unlock()
-	
-	_, err := _conn.Write(in[:])
-	if err != nil { panic("Lost connection to Elevator Server") }
-}
 
+	_, err := _conn.Write(in[:])
+	if err != nil {
+		panic("Lost connection to Elevator Server")
+	}
+}
 
 func toByte(a bool) byte {
 	var b byte = 0

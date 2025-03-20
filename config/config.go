@@ -1,21 +1,26 @@
 package config
 
-import (
-	"time"
-)
+import "time"
 
 const (
-	// Change these parameters for custom configurations
-	NumFloors       = 4
-	NumElevators    = 1
-	NumButtons      = 3
+	// Elevator setup
+	NumFloors    = 4
+	NumElevators = 1
+	NumButtons   = 3
+
+	// Networking
 	PeersPortNumber = 58735
 	BcastPortNumber = 58750
 
-	BufferSize = 1024
+	// Channel and buffer sizes
+	BufferSize         = 1024
+	ElevatorChannelBuf = 16
+	HardwarePollRate   = 20 * time.Millisecond
 
+	// Timing
 	DisconnectTime   = 1 * time.Second
 	DoorOpenDuration = 3 * time.Second
 	WatchdogTime     = 4 * time.Second
-	Interval         = 15 * time.Millisecond
+	PeerInterval     = 15 * time.Millisecond
+	DistributorTick  = 15 * time.Millisecond
 )

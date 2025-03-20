@@ -1,8 +1,10 @@
+// TODO: check iota constants, if they are exported capitalize firt letter, if not, keep it lowercase in first letter
+
 package elevator
 
 import (
 	"Driver-go/hardware"
-	"fmt"
+	"log" // Import for logging
 )
 
 // Direction represents the movement direction of the elevator.
@@ -21,7 +23,7 @@ func (d Direction) ToMotorDirection() hardware.MotorDirection {
 	case Down:
 		return hardware.MD_Down
 	default:
-		fmt.Println("Warning: Invalid direction in ToMotorDirection(), returning MD_Stop")
+		log.Println("Warning: Invalid direction in ToMotorDirection(), returning MD_Stop")
 		return hardware.MD_Stop
 	}
 }
@@ -34,7 +36,7 @@ func (d Direction) ToButtonType() hardware.ButtonType {
 	case Down:
 		return hardware.BT_HallDown
 	default:
-		fmt.Println("Warning: Invalid direction in ToButtonType(), returning invalid value")
+		log.Println("Warning: Invalid direction in ToButtonType(), returning invalid value")
 		return -1 // Invalid ButtonType
 	}
 }
@@ -47,7 +49,7 @@ func (d Direction) ToString() string {
 	case Down:
 		return "down"
 	default:
-		fmt.Println("Warning: Invalid direction in ToString(), returning 'unknown'")
+		log.Println("Warning: Invalid direction in ToString(), returning 'unknown'")
 		return "unknown"
 	}
 }
@@ -55,7 +57,7 @@ func (d Direction) ToString() string {
 // Returns the opposite direction
 func (d Direction) FlipDirection() Direction {
 	if d != Up && d != Down {
-		fmt.Println("Warning: Invalid direction in Opposite(), returning Up as default")
+		log.Println("Warning: Invalid direction in Opposite(), returning Up as default")
 		return Up
 	}
 	return Direction(1 - d)

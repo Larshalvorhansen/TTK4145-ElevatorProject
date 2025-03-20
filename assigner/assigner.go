@@ -2,10 +2,10 @@ package assigner
 
 import (
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/coordinator"
 	"Driver-go/elevator"
 	"encoding/json"
-	"fmt"
+	"log"
 	"os/exec"
 	"runtime"
 	"strconv"
@@ -23,11 +23,11 @@ type HRAInput struct {
 	States       map[string]HRAState       `json:"states"`
 }
 
-func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders {
+func CalculateOptimalOrders(ss coordinator.SharedState, id int) elevator.Orders {
 
 	stateMap := make(map[string]HRAState)
-	for i, v := range cs.States {
-		if cs.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
+	for i, v := range ss.States {
+		if ss.Ackmap[i] == coordinator.NotAvailable || v.State.MotorStatus {
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
@@ -41,11 +41,11 @@ func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders 
 
 	// For debugging
 	if len(stateMap) == 0 {
-		fmt.Println("no elevator states available for assignment!")
+		log.Println("no elevator states available for assignment!")
 		panic("no elevator states available for assignment!")
 	}
 
-	hraInput := HRAInput{cs.HallRequests, stateMap}
+	hraInput := HRAInput{ss.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {
@@ -59,21 +59,21 @@ func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders 
 
 	jsonBytes, err := json.Marshal(hraInput)
 	if err != nil {
-		fmt.Println("json.Marshal error: ", err)
+		log.Println("json.Marshal error:", err)
 		panic("json.Marshal error")
 	}
 
 	ret, err := exec.Command("assigner/executables/"+hraExecutable, "-i", "--includeCab", string(jsonBytes)).CombinedOutput()
 	if err != nil {
-		fmt.Println("exec.Command error: ", err)
-		fmt.Println(string(ret))
+		log.Println("exec.Command error:", err)
+		log.Println(string(ret))
 		panic("exec.Command error")
 	}
 
 	output := new(map[string]elevator.Orders)
 	err = json.Unmarshal(ret, &output)
 	if err != nil {
-		fmt.Println("json.Unmarshal error: ", err)
+		log.Println("json.Unmarshal error:", err)
 		panic("json.Unmarshal error")
 	}
 

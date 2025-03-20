@@ -1,3 +1,5 @@
+// TODO: check iota constants, if they are exported capitalize firt letter, if not, keep it lowercase in first letter
+
 package elevator
 
 import (
