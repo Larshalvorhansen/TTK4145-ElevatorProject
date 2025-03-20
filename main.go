@@ -1,16 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
-	"flag"
-	"fmt"
-	"os"
-	"os/exec"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
-	"runtime"
 	"Driver-go/assigner"
 	"Driver-go/config"
 	"Driver-go/distributor"
@@ -19,6 +9,16 @@ import (
 	"Driver-go/lamp"
 	"Driver-go/network/bcast"
 	"Driver-go/network/peers"
+	"encoding/csv"
+	"flag"
+	"fmt"
+	"os"
+	"os/exec"
+	"os/signal"
+	"runtime"
+	"strconv"
+	"syscall"
+	"time"
 )
 
 const filename = "state.csv"
