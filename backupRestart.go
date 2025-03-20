@@ -6,10 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"syscall"
 	"time"
-	"runtime"
 )
 
 const filename = "state.csv"
@@ -31,6 +31,7 @@ func openTerminalAndRun(command string) {
 func readLastState() int {
 	file, err := os.Open(filename)
 	if err != nil {
+		fmt.Println("No previous state found. Starting from 1.")
 		return 1 // Start from 1 if file doesn't exist
 	}
 	defer file.Close()
@@ -38,14 +39,17 @@ func readLastState() int {
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil || len(records) == 0 {
+		fmt.Println("CSV file empty or unreadable. Starting from 1.")
 		return 1
 	}
 
 	lastVal, err := strconv.Atoi(records[len(records)-1][0])
 	if err != nil {
+		fmt.Println("Invalid state in CSV. Resetting to 1.")
 		return 1
 	}
 
+	fmt.Println("Resuming from last recorded state:", lastVal)
 	return lastVal
 }
 
@@ -60,22 +64,24 @@ func writeStateToCSV(value int) {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	writer.Write([]string{strconv.Itoa(value)})
+	err = writer.Write([]string{strconv.Itoa(value)})
+	if err != nil {
+		fmt.Println("Error writing to CSV:", err)
+	}
 }
 
 func main() {
-	fmt.Println("Running ",restartProgram,"...")
+	fmt.Println("Running backupRestart.go...")
 
 	state := readLastState()
-	ch := make(chan int)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	// Goroutine to update state and write to CSV every second
 	go func() {
 		for {
-			ch <- state
+			fmt.Println("Recorded:", state) // Debugging output
 			writeStateToCSV(state)
-			fmt.Println("Recorded:", state)
 			state++
 			if state > 4 {
 				state = 1
@@ -84,6 +90,7 @@ func main() {
 		}
 	}()
 
+	// Goroutine to handle Ctrl+C (interrupt) signals
 	go func() {
 		for sig := range c {
 			fmt.Println("Received signal:", sig)
@@ -92,5 +99,5 @@ func main() {
 		}
 	}()
 
-	select {} // Keep the program running
+	select {} // Keep the program running indefinitely
 }
