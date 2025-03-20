@@ -30,7 +30,7 @@ func main() {
 	newOrderC := make(chan elevator.Orders, config.BufferSize)
 	deliveredOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
 	newStateC := make(chan elevator.State, config.BufferSize)
-	confirmedCommonStateC := make(chan coordinator.SharedState, config.BufferSize)
+	confirmedSharedStateC := make(chan coordinator.SharedState, config.BufferSize)
 	networkTxC := make(chan coordinator.SharedState, config.BufferSize)
 	networkRxC := make(chan coordinator.SharedState, config.BufferSize)
 	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
@@ -56,7 +56,7 @@ func main() {
 	)
 
 	go coordinator.Distributor(
-		confirmedCommonStateC,
+		confirmedSharedStateC,
 		deliveredOrderC,
 		newStateC,
 		networkTxC,
@@ -71,9 +71,9 @@ func main() {
 
 	for {
 		select {
-		case commonState := <-confirmedCommonStateC:
-			newOrderC <- assigner.CalculateOptimalOrders(commonState, id)
-			lamp.SetLamps(commonState, id)
+		case sharedState := <-confirmedSharedStateC:
+			newOrderC <- assigner.CalculateOptimalOrders(sharedState, id)
+			lamp.SetLamps(sharedState, id)
 
 		default:
 			continue
