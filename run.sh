@@ -1,7 +1,8 @@
+# TODO: maybe change the name from run.sh to start.sh or something like that
+
 if [ -z "$1" ]; then
     echo -e "\nEnter elevator ID (default 0):"
     read -p "> " inputID
-    # read -p "Enter elevator ID (default 0): " inputID
     if [ -z "$inputID" ]; then
         ID=0
     else
@@ -14,7 +15,6 @@ fi
 if [ -z "$2" ]; then
     echo -e "Enter elevator port (default 15657):"
     read -p "> " inputPort
-    #read -p "Enter elevator port (default 15657): " inputPort
     if [ -z "$inputPort" ]; then
         PORT=15657
     else
