@@ -48,12 +48,12 @@ func Distributor(
 	for {
 		select {
 		case <-disconnectTimer.C:
-			ss.makeOthersUnavailable(id)
+			ss.MakeOthersUnavailable(id)
 			fmt.Println("Lost connection to network")
 			offline = true
 
 		case peers = <-peersCh:
-			ss.makeOthersUnavailable(id)
+			ss.MakeOthersUnavailable(id)
 			idle = false
 
 		case <-intervalTicker.C:
@@ -67,22 +67,22 @@ func Distributor(
 			select {
 			case newOrder = <-newOrderCh:
 				stashType = Add
-				ss.prepNewSs(id)
-				ss.addOrder(newOrder, id)
+				ss.PrepNewSs(id)
+				ss.AddOrder(newOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
 			case deliveredOrder = <-deliveredOrderCh:
 				stashType = Remove
-				ss.prepNewSs(id)
-				ss.removeOrder(deliveredOrder, id)
+				ss.PrepNewSs(id)
+				ss.RemoveOrder(deliveredOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
 			case newState = <-newStateCh:
 				stashType = State
-				ss.prepNewSs(id)
-				ss.updateState(newState, id)
+				ss.PrepNewSs(id)
+				ss.UpdateState(newState, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
@@ -90,7 +90,7 @@ func Distributor(
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 				if arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum) {
 					ss = arrivedSs
-					ss.makeLostPeersUnavailable(peers)
+					ss.MakeLostPeersUnavailable(peers)
 					ss.Ackmap[id] = Acked
 					idle = false
 				}
@@ -111,19 +111,19 @@ func Distributor(
 			case newOrder := <-newOrderCh:
 				if !ss.States[id].State.Motorstatus {
 					ss.Ackmap[id] = Acked
-					ss.addCabCall(newOrder, id)
+					ss.AddCabCall(newOrder, id)
 					confirmedSsCh <- ss
 				}
 
 			case deliveredOrder := <-deliveredOrderCh:
 				ss.Ackmap[id] = Acked
-				ss.removeOrder(deliveredOrder, id)
+				ss.RemoveOrder(deliveredOrder, id)
 				confirmedSsCh <- ss
 
 			case newState := <-newStateCh:
 				if !(newState.Obstructed || newState.Motorstatus) {
 					ss.Ackmap[id] = Acked
-					ss.updateState(newState, id)
+					ss.UpdateState(newState, id)
 					confirmedSsCh <- ss
 				}
 
@@ -142,27 +142,27 @@ func Distributor(
 				case arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum):
 					ss = arrivedSs
 					ss.Ackmap[id] = Acked
-					ss.makeLostPeersUnavailable(peers)
+					ss.MakeLostPeersUnavailable(peers)
 
-				case arrivedSs.fullyAcked(id):
+				case arrivedSs.FullyAcked(id):
 					ss = arrivedSs
 					confirmedSsCh <- ss
 
 					switch {
 					case ss.Origin != id && stashType != None:
-						ss.prepNewSs(id)
+						ss.PrepNewSs(id)
 
 						switch stashType {
 						case Add:
-							ss.addOrder(newOrder, id)
+							ss.AddOrder(newOrder, id)
 							ss.Ackmap[id] = Acked
 
 						case Remove:
-							ss.removeOrder(deliveredOrder, id)
+							ss.RemoveOrder(deliveredOrder, id)
 							ss.Ackmap[id] = Acked
 
 						case State:
-							ss.updateState(newState, id)
+							ss.UpdateState(newState, id)
 							ss.Ackmap[id] = Acked
 						}
 
@@ -174,10 +174,10 @@ func Distributor(
 						idle = true
 					}
 
-				case ss.equals(arrivedSs):
+				case ss.Equals(arrivedSs):
 					ss = arrivedSs
 					ss.Ackmap[id] = Acked
-					ss.makeLostPeersUnavailable(peers)
+					ss.MakeLostPeersUnavailable(peers)
 
 				default:
 				}
