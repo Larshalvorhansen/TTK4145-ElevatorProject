@@ -1,18 +1,11 @@
-ID=$1 
-
-if [ -z "$ID" ]; then
-    echo "Usage: ./run.sh <ID>"
-    exit 1
-fi
-
 trap 'echo "Ignoring Ctrl+C...";' SIGINT 
 
 while true; do
     echo "Building the project..."
-    go build -o elevator main.go || { echo "Build failed. Retrying..."; sleep 1; continue; }
+    go build -o elevator_program main.go || { echo "Build failed. Retrying..."; sleep 1; continue; }
 
-    echo "Starting elevator program with ID=$ID..."
-    ./elevator -id=$ID
+    echo "Starting elevator program..."
+    ./elevator_program
 
     echo "Program crashed or terminal closed. Restarting in a new window..."
     
