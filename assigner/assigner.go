@@ -2,7 +2,7 @@ package assigner
 
 import (
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/coordinator"
 	"Driver-go/elevator"
 	"encoding/json"
 	"fmt"
@@ -23,11 +23,11 @@ type HRAInput struct {
 	States       map[string]HRAState       `json:"states"`
 }
 
-func CalculateOptimalOrders(commonState distributor.CommonState, id int) elevator.Orders {
+func CalculateOptimalOrders(sharedState coordinator.SharedState, id int) elevator.Orders {
 
 	stateMap := make(map[string]HRAState)
-	for i, v := range commonState.States {
-		if commonState.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
+	for i, v := range sharedState.States {
+		if sharedState.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
@@ -45,7 +45,7 @@ func CalculateOptimalOrders(commonState distributor.CommonState, id int) elevato
 		panic("no elevator states available for assignment!")
 	}
 
-	hraInput := HRAInput{commonState.HallRequests, stateMap}
+	hraInput := HRAInput{sharedState.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {

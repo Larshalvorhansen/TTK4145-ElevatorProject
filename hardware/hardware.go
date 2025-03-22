@@ -4,10 +4,8 @@ import "time"
 import "sync"
 import "net"
 import "fmt"
+import "Driver-go/config"
 
-
-
-const _pollRate = 20 * time.Millisecond
 
 var _initialized    bool = false
 var _numFloors      int = 4
@@ -79,7 +77,7 @@ func SetStopLamp(value bool) {
 func PollButtons(receiver chan<- ButtonEvent) {
 	prev := make([][3]bool, _numFloors)
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		for f := 0; f < _numFloors; f++ {
 			for b := ButtonType(0); b < 3; b++ {
 				v := GetButton(b, f)
@@ -95,7 +93,7 @@ func PollButtons(receiver chan<- ButtonEvent) {
 func PollFloorSensor(receiver chan<- int) {
 	prev := -1
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		v := GetFloor()
 		if v != prev && v != -1 {
 			receiver <- v
@@ -107,7 +105,7 @@ func PollFloorSensor(receiver chan<- int) {
 func PollStopButton(receiver chan<- bool) {
 	prev := false
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		v := GetStop()
 		if v != prev {
 			receiver <- v
@@ -119,7 +117,7 @@ func PollStopButton(receiver chan<- bool) {
 func PollObstructionSwitch(receiver chan<- bool) {
 	prev := false
 	for {
-		time.Sleep(_pollRate)
+		time.Sleep(config.HardwarePollRate)
 		v := GetObstruction()
 		if v != prev {
 			receiver <- v

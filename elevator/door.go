@@ -14,7 +14,7 @@ const (
 	Obstructed
 )
 
-func Door(
+func DoorLogic(
 	doorClosedC chan<- bool,
 	doorOpenC <-chan bool,
 	obstructedC chan<- bool,
@@ -61,11 +61,11 @@ func Door(
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
 				doorState = InCountDown
 			default:
-				panic("Door state not implemented")
+				panic("DoorLogic state not implemented")
 			}
 		case <-timeCounter.C:
 			if doorState != InCountDown {
-				panic("Door state not implemented")
+				panic("DoorLogic state not implemented")
 			}
 			if obstruction {
 				doorState = Obstructed

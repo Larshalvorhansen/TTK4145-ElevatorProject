@@ -25,7 +25,7 @@ func Transmitter(port int, id int, transmitEnable <-chan bool) {
 	for {
 		select {
 		case enable = <-transmitEnable:
-		case <-time.After(config.Interval):
+		case <-time.After(config.PeerInterval):
 		}
 		if enable {
 			idStr := strconv.Itoa(id)
@@ -46,7 +46,7 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 	for {
 		updated := false
 
-		conn.SetReadDeadline(time.Now().Add(config.Interval))
+		conn.SetReadDeadline(time.Now().Add(config.PeerInterval))
 		n, _, _ := conn.ReadFrom(buf[0:])
 
 		idStr := string(buf[:n])

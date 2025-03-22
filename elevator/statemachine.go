@@ -41,13 +41,13 @@ func Elevator(
 	deliveredOrderC chan<- hardware.ButtonEvent,
 	newStateC chan<- State,
 ) {
-	doorOpenC := make(chan bool, 16)
-	doorClosedC := make(chan bool, 16)
+	doorOpenC := make(chan bool, config.ElevatorChBuffer)
+	doorClosedC := make(chan bool, config.ElevatorChBuffer)
 	floorEnteredC := make(chan int)
-	obstructedC := make(chan bool, 16)
-	motorC := make(chan bool, 16)
+	obstructedC := make(chan bool, config.ElevatorChBuffer)
+	motorC := make(chan bool, config.ElevatorChBuffer)
 
-	go Door(doorClosedC, doorOpenC, obstructedC)
+	go DoorLogic(doorClosedC, doorOpenC, obstructedC)
 	go hardware.PollFloorSensor(floorEnteredC)
 
 	hardware.SetMotorDirection(hardware.MD_Down)
@@ -112,9 +112,9 @@ func Elevator(
 				panic("Orders in wrong state")
 			}
 
-		// 2) Door closes
+		// 2) DoorLogic closes
 		case <-doorClosedC:
-			logEvent("Door closed at floor %d", state.Floor) // For debugging
+			logEvent("DoorLogic closed at floor %d", state.Floor) // For debugging
 			switch state.Behaviour {
 			case DoorOpen:
 				switch {

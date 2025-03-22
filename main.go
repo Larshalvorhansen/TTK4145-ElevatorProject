@@ -3,7 +3,7 @@ package main
 import (
 	"Driver-go/assigner"
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/coordinator"
 	"Driver-go/elevator"
 	"Driver-go/hardware"
 	"Driver-go/lamp"
@@ -30,32 +30,32 @@ func main() {
 	newOrderC := make(chan elevator.Orders, config.BufferSize)
 	deliveredOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
 	newStateC := make(chan elevator.State, config.BufferSize)
-	confirmedCommonStateC := make(chan distributor.CommonState, config.BufferSize)
-	networkTxC := make(chan distributor.CommonState, config.BufferSize)
-	networkRxC := make(chan distributor.CommonState, config.BufferSize)
+	confirmedCommonStateC := make(chan coordinator.SharedState, config.BufferSize)
+	networkTxC := make(chan coordinator.SharedState, config.BufferSize)
+	networkRxC := make(chan coordinator.SharedState, config.BufferSize)
 	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
 	peersTxC := make(chan bool, config.BufferSize)
 
 	go peers.Receiver(
-		config.PeersPortNumber,
+		config.MessagePort,
 		peersRxC,
 	)
 	go peers.Transmitter(
-		config.PeersPortNumber,
+		config.MessagePort,
 		id,
 		peersTxC,
 	)
 
 	go bcast.Receiver(
-		config.BcastPortNumber,
+		config.MessagePort,
 		networkRxC,
 	)
 	go bcast.Transmitter(
-		config.BcastPortNumber,
+		config.MessagePort,
 		networkTxC,
 	)
 
-	go distributor.Distributor(
+	go coordinator.Distributor(
 		confirmedCommonStateC,
 		deliveredOrderC,
 		newStateC,
@@ -71,9 +71,9 @@ func main() {
 
 	for {
 		select {
-		case commonState := <-confirmedCommonStateC:
-			newOrderC <- assigner.CalculateOptimalOrders(commonState, id)
-			lamp.SetLamps(commonState, id)
+		case sharedState := <-confirmedCommonStateC:
+			newOrderC <- assigner.CalculateOptimalOrders(sharedState, id)
+			lamp.SetLamps(sharedState, id)
 
 		default:
 			continue
