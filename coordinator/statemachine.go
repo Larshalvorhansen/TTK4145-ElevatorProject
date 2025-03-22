@@ -19,18 +19,18 @@ const (
 )
 
 func Distributor(
-	confirmedCsC chan<- SharedState,
-	deliveredOrderC <-chan hardware.ButtonEvent,
-	newStateC <-chan elevator.State,
+	confirmedSsCh chan<- SharedState,
+	deliveredOrderCh <-chan hardware.ButtonEvent,
+	newStateCh <-chan elevator.State,
 	networkTx chan<- SharedState,
 	networkRx <-chan SharedState,
-	peersC <-chan peers.PeerUpdate,
+	peersCh <-chan peers.PeerUpdate,
 	id int,
 ) {
 
-	newOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
+	newOrderCh := make(chan hardware.ButtonEvent, config.BufferSize)
 
-	go hardware.PollButtons(newOrderC)
+	go hardware.PollButtons(newOrderCh)
 
 	var stashType StashType
 	var newOrder hardware.ButtonEvent
@@ -52,7 +52,7 @@ func Distributor(
 			fmt.Println("Lost connection to network")
 			offline = true
 
-		case peers = <-peersC:
+		case peers = <-peersCh:
 			ss.makeOthersUnavailable(id)
 			idle = false
 
@@ -65,31 +65,31 @@ func Distributor(
 		switch {
 		case idle:
 			select {
-			case newOrder = <-newOrderC:
+			case newOrder = <-newOrderCh:
 				stashType = Add
-				ss.prepNewCs(id)
+				ss.prepNewSs(id)
 				ss.addOrder(newOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
-			case deliveredOrder = <-deliveredOrderC:
+			case deliveredOrder = <-deliveredOrderCh:
 				stashType = Remove
-				ss.prepNewCs(id)
+				ss.prepNewSs(id)
 				ss.removeOrder(deliveredOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
-			case newState = <-newStateC:
+			case newState = <-newStateCh:
 				stashType = State
-				ss.prepNewCs(id)
+				ss.prepNewSs(id)
 				ss.updateState(newState, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
-			case arrivedCs := <-networkRx:
+			case arrivedSs := <-networkRx:
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
-				if arrivedCs.SeqNum > ss.SeqNum || (arrivedCs.Origin > ss.Origin && arrivedCs.SeqNum == ss.SeqNum) {
-					ss = arrivedCs
+				if arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum) {
+					ss = arrivedSs
 					ss.makeLostPeersUnavailable(peers)
 					ss.Ackmap[id] = Acked
 					idle = false
@@ -108,23 +108,23 @@ func Distributor(
 					ss.Ackmap[id] = NotAvailable
 				}
 
-			case newOrder := <-newOrderC:
+			case newOrder := <-newOrderCh:
 				if !ss.States[id].State.Motorstatus {
 					ss.Ackmap[id] = Acked
 					ss.addCabCall(newOrder, id)
-					confirmedCsC <- ss
+					confirmedSsCh <- ss
 				}
 
-			case deliveredOrder := <-deliveredOrderC:
+			case deliveredOrder := <-deliveredOrderCh:
 				ss.Ackmap[id] = Acked
 				ss.removeOrder(deliveredOrder, id)
-				confirmedCsC <- ss
+				confirmedSsCh <- ss
 
-			case newState := <-newStateC:
+			case newState := <-newStateCh:
 				if !(newState.Obstructed || newState.Motorstatus) {
 					ss.Ackmap[id] = Acked
 					ss.updateState(newState, id)
-					confirmedCsC <- ss
+					confirmedSsCh <- ss
 				}
 
 			default:
@@ -132,25 +132,25 @@ func Distributor(
 
 		case !idle:
 			select {
-			case arrivedCs := <-networkRx:
-				if arrivedCs.SeqNum < ss.SeqNum {
+			case arrivedSs := <-networkRx:
+				if arrivedSs.SeqNum < ss.SeqNum {
 					break
 				}
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
-				case arrivedCs.SeqNum > ss.SeqNum || (arrivedCs.Origin > ss.Origin && arrivedCs.SeqNum == ss.SeqNum):
-					ss = arrivedCs
+				case arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum):
+					ss = arrivedSs
 					ss.Ackmap[id] = Acked
 					ss.makeLostPeersUnavailable(peers)
 
-				case arrivedCs.fullyAcked(id):
-					ss = arrivedCs
-					confirmedCsC <- ss
+				case arrivedSs.fullyAcked(id):
+					ss = arrivedSs
+					confirmedSsCh <- ss
 
 					switch {
 					case ss.Origin != id && stashType != None:
-						ss.prepNewCs(id)
+						ss.prepNewSs(id)
 
 						switch stashType {
 						case Add:
@@ -174,8 +174,8 @@ func Distributor(
 						idle = true
 					}
 
-				case ss.equals(arrivedCs):
-					ss = arrivedCs
+				case ss.equals(arrivedSs):
+					ss = arrivedSs
 					ss.Ackmap[id] = Acked
 					ss.makeLostPeersUnavailable(peers)
 

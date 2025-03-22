@@ -70,10 +70,10 @@ func (ss *SharedState) fullyAcked(id int) bool {
 	return true
 }
 
-func (oldCs SharedState) equals(newCs SharedState) bool {
-	oldCs.Ackmap = [config.NumElevators]AckStatus{}
-	newCs.Ackmap = [config.NumElevators]AckStatus{}
-	return reflect.DeepEqual(oldCs, newCs)
+func (oldSs SharedState) equals(newSs SharedState) bool {
+	oldSs.Ackmap = [config.NumElevators]AckStatus{}
+	newSs.Ackmap = [config.NumElevators]AckStatus{}
+	return reflect.DeepEqual(oldSs, newSs)
 }
 
 func (ss *SharedState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
@@ -90,7 +90,7 @@ func (ss *SharedState) makeOthersUnavailable(id int) {
 	}
 }
 
-func (ss *SharedState) prepNewCs(id int) {
+func (ss *SharedState) prepNewSs(id int) {
 	ss.SeqNum++
 	ss.Origin = id
 	for id := range ss.Ackmap {

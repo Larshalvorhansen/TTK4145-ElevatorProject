@@ -34,7 +34,7 @@ func Transmitter(port int, id int, transmitEnable <-chan bool) {
 	}
 }
 
-func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
+func Receiver(port int, peerUpdateCh  chan<- PeerUpdate) {
 
 	var buf [1024]byte
 	var p PeerUpdate
@@ -87,7 +87,7 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 
 			sort.Ints(p.Peers)
 			sort.Ints(p.Lost)
-			peerUpdateCh <- p
+			peerUpdateCh  <- p
 		}
 	}
 }

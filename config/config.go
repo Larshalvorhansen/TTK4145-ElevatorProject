@@ -13,7 +13,7 @@ const (
 	// Networking
 	MessagePort = 20017
 
-	// Channel and buffer sizes
+	// Ch annel and buffer sizes
 	BufferSize = 1024
 	ElevatorChBuffer = 16
 	HardwarePollRate = 20 * time.Millisecond

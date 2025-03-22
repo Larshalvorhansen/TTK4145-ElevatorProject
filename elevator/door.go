@@ -15,14 +15,14 @@ const (
 )
 
 func DoorLogic(
-	doorClosedC chan<- bool,
-	doorOpenC <-chan bool,
-	obstructedC chan<- bool,
+	doorClosedCh chan<- bool,
+	doorOpenCh <-chan bool,
+	obstructedCh chan<- bool,
 ) {
 	hardware.SetDoorOpenLamp(false)
 
-	obstructionC := make(chan bool)
-	go hardware.PollObstructionSwitch(obstructionC)
+	obstructionCh := make(chan bool)
+	go hardware.PollObstructionSwitch(obstructionCh)
 
 	// Init state
 	obstruction := false
@@ -33,21 +33,21 @@ func DoorLogic(
 
 	for {
 		select {
-		case obstruction = <-obstructionC:
+		case obstruction = <-obstructionCh:
 			if !obstruction && doorState == Obstructed {
 				hardware.SetDoorOpenLamp(false)
-				doorClosedC <- true
+				doorClosedCh <- true
 				doorState = Closed
 			}
 			if obstruction {
-				obstructedC <- true
+				obstructedCh <- true
 			} else {
-				obstructedC <- false
+				obstructedCh <- false
 			}
 
-		case <-doorOpenC:
+		case <-doorOpenCh:
 			if obstruction {
-				obstructedC <- true
+				obstructedCh <- true
 			}
 			switch doorState {
 			case Closed:
@@ -71,7 +71,7 @@ func DoorLogic(
 				doorState = Obstructed
 			} else {
 				hardware.SetDoorOpenLamp(false)
-				doorClosedC <- true
+				doorClosedCh <- true
 				doorState = Closed
 			}
 		}
