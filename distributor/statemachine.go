@@ -55,8 +55,7 @@ func Distributor(
 			offline = true
 
 		case peers = <-peersC:
-			cs.makeOthersUnavailable(id)
-			idle = false
+			cs.makeOthecsvse
 
 		//writes commonstate to networkTx and writes cs to networkTx.
 		case <-intervalTicker.C:

@@ -9,8 +9,8 @@ const (
 	NumFloors       = 4
 	NumElevators    = 1
 	NumButtons      = 3
-	PeersPortNumber = 58735
-	BcastPortNumber = 58750
+	PeersPortNumber = 20017
+	BcastPortNumber = 20017
 
 	BufferSize = 1024
 
