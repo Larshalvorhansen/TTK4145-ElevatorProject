@@ -7,7 +7,7 @@ import (
 const (
 	// Elevator setup
 	NumFloors       = 4
-	NumElevators    = 1
+	NumElevators    = 3
 	NumButtons      = 3
 
 	// Networking
