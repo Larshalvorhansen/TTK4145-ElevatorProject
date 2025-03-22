@@ -94,6 +94,9 @@ func main() {
 	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
 	peersTxC := make(chan bool, config.BufferSize)
 
+	//I want a function to run here. Before all the go rutines below.
+	sendInitialCommonState(networkRxC, id)
+
 	go peers.Receiver(config.PeersPortNumber, peersRxC)
 	go peers.Transmitter(config.PeersPortNumber, id, peersTxC)
 	go bcast.Receiver(config.BcastPortNumber, networkRxC)

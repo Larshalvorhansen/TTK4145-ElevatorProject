@@ -5,9 +5,9 @@ import (
 	"Driver-go/elevator"
 	"Driver-go/hardware"
 	"Driver-go/network/peers"
-	"encoding/csv"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -58,28 +58,29 @@ func Distributor(
 			cs.makeOthersUnavailable(id)
 			idle = false
 
-		//writes commonstate to networkTx and writes cs to networkTx.
 		case <-intervalTicker.C:
 			fmt.Println("Current State:", cs) // Print all info on one line
 
-			// Open CSV file in append mode
-			file, err := os.OpenFile("commonstateLog.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			// Read the current file
+			data, _ := os.ReadFile("commonstateLog.csv")
+			lines := strings.Split(string(data), "\n")
+
+			// Replace the first line or create a new one
+			newLine := fmt.Sprintf("%v", cs)
+			if len(lines) > 1 {
+				lines[0] = newLine
+			} else {
+				lines = []string{newLine}
+			}
+
+			// Write it back to the file
+			err := os.WriteFile("commonstateLog.csv", []byte(strings.Join(lines, "\n")), 0644)
 			if err != nil {
-				fmt.Println("Error opening CSV file:", err)
+				fmt.Println("Error writing CSV file:", err)
 				break
 			}
-			defer file.Close()
-
-			writer := csv.NewWriter(file)
-
-			// Convert CommonState to a single-line string and write to CSV
-			record := []string{fmt.Sprintf("%v", cs)}
-			writer.Write(record)
-
-			writer.Flush() // Ensure data is written
 
 			networkTx <- cs
-
 		default:
 		}
 
