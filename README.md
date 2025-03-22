@@ -35,7 +35,7 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Heis tar imot cab-kall og kjører til riktig etasje                                               | ja |
 | Heis mister ikke noen kall (hall eller cab)                                                      | ja |
 | Heis fortsetter å fungere ved nettverksbrudd                                                     | kanskje |
-| Heis fortsetter å fungere ved strømbrudd                                                         | ja? |
+| Heis fortsetter å fungere ved strømbrudd                                                         | ja |
 | Heis fullfører cab-kall etter strøm/nettverk kommer tilbake                                      | ja |
 | Heis håndterer feil innen noen sekunder (ikke minutter)                                          | kankskje |
 | Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | nei? |
@@ -51,7 +51,7 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Døren lukker seg ikke mens heisen beveger seg                                                    | kanskje |
 | Døren holder seg åpen i 3 sekunder på etasjen                                                    | kanskje |
 | Døren lukker seg ikke hvis en hindring er til stede                                              | kanskje |
-| Heisen stopper ikke på hver etasje unødvendig                                                    | kanskje |
+| Heisen stopper ikke på hver etasje unødvendig                                                    | ja |
 | Hall-knappelyset slukker når heis ankommer riktig retning                                        | kanskje |
 | Heisen skifter ikke retning unødvendig                                                           | kanskje |
 | Heisen annonserer retning korrekt (opp/ned)                                                      | kanskje |
