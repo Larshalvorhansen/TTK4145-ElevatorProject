@@ -58,3 +58,16 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
 
 minitest
+
+
+### Build and Run
+*Note: The ID must be in the range 0 to NElevators-1.*
+```bash
+chmod +x run.sh
+./run.sh <ID> 
+```
+### Terminate Terminal
+
+```bash
+pkill -f run.sh
+```
