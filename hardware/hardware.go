@@ -65,9 +65,9 @@ func SetDoorOpenLamp(value bool) {
 	write([4]byte{4, toByte(value), 0, 0})
 }
 
-func SetStopLamp(value bool) {
-	write([4]byte{5, toByte(value), 0, 0})
-}
+// func SetStopLamp(value bool) {
+// 	write([4]byte{5, toByte(value), 0, 0})
+// }
 
 func PollButtons(receiver chan<- ButtonEvent) {
 	prev := make([][3]bool, _numFloors)
@@ -97,17 +97,17 @@ func PollFloorSensor(receiver chan<- int) {
 	}
 }
 
-func PollStopButton(receiver chan<- bool) {
-	prev := false
-	for {
-		time.Sleep(config.HardwarePollRate)
-		v := GetStop()
-		if v != prev {
-			receiver <- v
-		}
-		prev = v
-	}
-}
+// func PollStopButton(receiver chan<- bool) {
+// 	prev := false
+// 	for {
+// 		time.Sleep(config.HardwarePollRate)
+// 		v := GetStop()
+// 		if v != prev {
+// 			receiver <- v
+// 		}
+// 		prev = v
+// 	}
+// }
 
 func PollObstructionSwitch(receiver chan<- bool) {
 	prev := false
@@ -135,10 +135,10 @@ func GetFloor() int {
 	}
 }
 
-func GetStop() bool {
-	a := read([4]byte{8, 0, 0, 0})
-	return toBool(a[1])
-}
+// func GetStop() bool {
+// 	a := read([4]byte{8, 0, 0, 0})
+// 	return toBool(a[1])
+// }
 
 func GetObstruction() bool {
 	a := read([4]byte{9, 0, 0, 0})

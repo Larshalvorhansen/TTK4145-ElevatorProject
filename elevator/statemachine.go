@@ -4,12 +4,13 @@ import (
 	"Driver-go/config"
 	"Driver-go/hardware"
 	"fmt"
+	"strconv"
 	"time"
 )
 
 // logEvent: En hjelpefunksjon for å skrive ut viktige hendelser
-func logEvent(format string, args ...interface{}) {
-	fmt.Printf("[Elevator] "+format+"\n", args...)
+func logEvent(id int, format string, args ...interface{}) {
+	fmt.Printf("[Elevator "+strconv.Itoa(id)+"] "+format+"\n", args...)
 }
 
 type State struct {
@@ -40,6 +41,7 @@ func Elevator(
 	newOrderCh <-chan Orders,
 	deliveredOrderCh chan<- hardware.ButtonEvent,
 	newStateCh chan<- State,
+	id int,
 ) {
 	doorOpenCh := make(chan bool, config.ElevatorChBuffer)
 	doorClosedCh := make(chan bool, config.ElevatorChBuffer)
@@ -58,14 +60,12 @@ func Elevator(
 	motorTimer := time.NewTimer(config.WatchdogTime)
 	motorTimer.Stop()
 
-	logEvent("Starting elevator in state: %s", state.Behaviour.ToString()) // For debugging
-
 	for {
 		select {
 
 		// 1) New order incoming
 		case orders = <-newOrderCh:
-			logEvent("New order received") // For debugging
+			// logEvent(id, "New order received") // For debugging
 			switch state.Behaviour {
 			case Idle:
 				switch {
@@ -114,7 +114,7 @@ func Elevator(
 
 		// 2) DoorLogic closes
 		case <-doorClosedCh:
-			logEvent("DoorLogic closed at floor %d", state.Floor) // For debugging
+			logEvent(id, "Door closed at floor %d", state.Floor) // For debugging
 			switch state.Behaviour {
 			case DoorOpen:
 				switch {
@@ -145,12 +145,12 @@ func Elevator(
 				}
 
 			default:
-				panic("DoorClosed in wrong state")
+				panic("Door in wrong state")
 			}
 
 		// 3) Elevator finds new floor
 		case state.Floor = <-floorEnteredCh:
-			logEvent("Arrived at floor %d", state.Floor) // For debugging
+			logEvent(id, "Detected floor %d", state.Floor) // For debugging
 			hardware.SetFloorIndicator(state.Floor)
 			motorTimer.Stop()
 			motorCh <- false
@@ -206,7 +206,7 @@ func Elevator(
 		// 4) MOTOR‐WATCHDOG time gone out
 		case <-motorTimer.C:
 			if !state.Motorstatus {
-				logEvent("WARNING: Lost motor power!") // For debugging
+				logEvent(id, "WARNING: Lost motor power!") // For debugging
 				// fmt.Println("Lost motor power")
 				state.Motorstatus = true
 				newStateCh <- state
@@ -217,9 +217,9 @@ func Elevator(
 			if obstruction != state.Obstructed {
 				state.Obstructed = obstruction
 				if obstruction {
-					logEvent("Obstruction detected!") // For debugging
+					logEvent(id, "Obstruction detected!") // For debugging
 				} else {
-					logEvent("Obstruction cleared") // For debugging
+					logEvent(id, "Obstruction cleared") // For debugging
 				}
 				newStateCh <- state
 			}
@@ -227,7 +227,7 @@ func Elevator(
 		// 6) Motor reinitialized
 		case motor := <-motorCh:
 			if state.Motorstatus {
-				logEvent("Motor power restored") // For debugging
+				logEvent(id, "Motor power restored") // For debugging
 				// fmt.Println("Regained motor power")
 				state.Motorstatus = motor
 				newStateCh <- state

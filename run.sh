@@ -28,10 +28,10 @@ trap 'echo -e "\nPressed Ctrl+C...";' SIGINT
 
 while true; do
     echo -e "\nBuilding the project..."
-    go build -o elevator_program main.go || { echo -e "\nBuild failed. Retrying..."; sleep 1; continue; }
+    go build -o restart_program main.go || { echo -e "\nBuild failed. Retrying..."; sleep 1; continue; }
 
     echo -e "\nStarting elevator program with ID=$ID and PORT=$PORT...\n"
-    ./elevator_program -id=$ID -port=$PORT
+    ./restart_program -id=$ID -port=$PORT
 
     echo -e "\nProgram crashed or terminal closed. Restarting in a new window...\n"
     sleep 1 

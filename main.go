@@ -67,13 +67,14 @@ func main() {
 	go elevator.Elevator(
 		newOrderCh,
 		deliveredOrderCh,
-		newStateCh)
+		newStateCh,
+		id)
 
 	for {
 		select {
-		case sharedState := <-confirmedSharedStateCh:
-			newOrderCh <- assigner.CalculateOptimalOrders(sharedState, id)
-			lamp.SetLamps(sharedState, id)
+		case ss := <-confirmedSharedStateCh:
+			newOrderCh <- assigner.AssignOrders(ss, id)
+			lamp.SetLamps(ss, id)
 
 		default:
 			continue

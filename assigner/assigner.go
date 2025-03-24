@@ -23,11 +23,11 @@ type HRAInput struct {
 	States       map[string]HRAState       `json:"states"`
 }
 
-func CalculateOptimalOrders(sharedState coordinator.SharedState, id int) elevator.Orders {
+func AssignOrders(ss coordinator.SharedState, id int) elevator.Orders {
 
 	stateMap := make(map[string]HRAState)
-	for i, v := range sharedState.States {
-		if sharedState.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
+	for i, v := range ss.States {
+		if ss.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
@@ -45,7 +45,7 @@ func CalculateOptimalOrders(sharedState coordinator.SharedState, id int) elevato
 		panic("no elevator states available for assignment!")
 	}
 
-	hraInput := HRAInput{sharedState.HallRequests, stateMap}
+	hraInput := HRAInput{ss.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {
