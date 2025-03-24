@@ -22,8 +22,8 @@ func Coordinator(
 	confirmedSsCh chan<- SharedState,
 	deliveredOrderCh <-chan hardware.ButtonEvent,
 	newStateCh <-chan elevator.State,
-	networkTx chan<- SharedState,
-	networkRx <-chan SharedState,
+	networkTxCh chan<- SharedState,
+	networkRxCh <-chan SharedState,
 	peersCh <-chan peers.PeerUpdate,
 	id int,
 ) {
@@ -57,7 +57,7 @@ func Coordinator(
 			idle = false
 
 		case <-intervalTicker.C:
-			networkTx <- ss
+			networkTxCh <- ss
 
 		default:
 		}
@@ -86,7 +86,7 @@ func Coordinator(
 				ss.Ackmap[id] = Acked
 				idle = false
 
-			case arrivedSs := <-networkRx:
+			case arrivedSs := <-networkRxCh:
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 				if arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum) {
 					ss = arrivedSs
@@ -100,7 +100,7 @@ func Coordinator(
 
 		case offline:
 			select {
-			case <-networkRx:
+			case <-networkRxCh:
 				if ss.States[id].CabRequests == [config.NumFloors]bool{} {
 					fmt.Println("Regained connection to network")
 					offline = false
@@ -132,7 +132,7 @@ func Coordinator(
 
 		case !idle:
 			select {
-			case arrivedSs := <-networkRx:
+			case arrivedSs := <-networkRxCh:
 				if arrivedSs.SeqNum < ss.SeqNum {
 					break
 				}
