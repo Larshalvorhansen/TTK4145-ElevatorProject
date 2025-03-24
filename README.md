@@ -30,7 +30,7 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Sjekkliste                                                                                       | ja/nei  |
 | ------------------------------------------------------------------------------------------------ | ------- |
 | Hall-knappen lyser når trykket på                                                                | ja      |
-| Heis ankommer etasjen etter hall-knapp er trykket                                                | ja |
+| Heis ankommer etasje-id=${ELEVATOR_ID}n etter hall-knapp er trykket                                                | ja |
 | Cab-knappen lyser når trykket på                                                                 | ja |
 | Heis tar imot cab-kall og kjører til riktig etasje                                               | ja |
 | Heis mister ikke noen kall (hall eller cab)                                                      | ja |
@@ -58,3 +58,16 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
 
 minitest
+
+
+### Build and Run
+*Note: The ID must be in the range 0 to NElevators-1.*
+```bash
+chmod +x run.sh
+./run.sh <ID> 
+```
+### Terminate Terminal
+
+```bash
+pkill -f run.sh
+```
