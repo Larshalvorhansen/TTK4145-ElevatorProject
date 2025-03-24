@@ -3,7 +3,7 @@ package main
 import (
 	"Driver-go/assigner"
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/coordinator"
 	"Driver-go/elevator"
 	"Driver-go/hardware"
 	"Driver-go/lamp"
@@ -16,7 +16,7 @@ import (
 
 func main() {
 
-	serverPort := flag.Int("port", 15657, "Elevator server port (default: 15657)")
+	serverPort := flag.Int("port", 15658, "Elevator server port (default: 15657)")
 	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
 
@@ -27,53 +27,53 @@ func main() {
 
 	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", id, port, config.NumFloors, config.NumElevators)
 
-	newOrderC := make(chan elevator.Orders, config.BufferSize)
-	deliveredOrderC := make(chan hardware.ButtonEvent, config.BufferSize)
-	newStateC := make(chan elevator.State, config.BufferSize)
-	confirmedCommonStateC := make(chan distributor.CommonState, config.BufferSize)
-	networkTxC := make(chan distributor.CommonState, config.BufferSize)
-	networkRxC := make(chan distributor.CommonState, config.BufferSize)
-	peersRxC := make(chan peers.PeerUpdate, config.BufferSize)
-	peersTxC := make(chan bool, config.BufferSize)
+	newOrderCh := make(chan elevator.Orders, config.BufferSize)
+	deliveredOrderCh := make(chan hardware.ButtonEvent, config.BufferSize)
+	newStateCh := make(chan elevator.State, config.BufferSize)
+	confirmedSharedStateCh := make(chan coordinator.SharedState, config.BufferSize)
+	networkTxCh := make(chan coordinator.SharedState, config.BufferSize)
+	networkRxCh := make(chan coordinator.SharedState, config.BufferSize)
+	peersRxCh := make(chan peers.PeerUpdate, config.BufferSize)
+	peersTxCh := make(chan bool, config.BufferSize)
 
 	go peers.Receiver(
-		config.PeersPortNumber,
-		peersRxC,
+		config.MessagePort,
+		peersRxCh,
 	)
 	go peers.Transmitter(
-		config.PeersPortNumber,
+		config.MessagePort,
 		id,
-		peersTxC,
+		peersTxCh,
 	)
 
 	go bcast.Receiver(
-		config.BcastPortNumber,
-		networkRxC,
+		config.MessagePort,
+		networkRxCh,
 	)
 	go bcast.Transmitter(
-		config.BcastPortNumber,
-		networkTxC,
+		config.MessagePort,
+		networkTxCh,
 	)
 
-	go distributor.Distributor(
-		confirmedCommonStateC,
-		deliveredOrderC,
-		newStateC,
-		networkTxC,
-		networkRxC,
-		peersRxC,
+	go coordinator.Distributor(
+		confirmedSharedStateCh,
+		deliveredOrderCh,
+		newStateCh,
+		networkTxCh,
+		networkRxCh,
+		peersRxCh,
 		id)
 
 	go elevator.Elevator(
-		newOrderC,
-		deliveredOrderC,
-		newStateC)
+		newOrderCh,
+		deliveredOrderCh,
+		newStateCh)
 
 	for {
 		select {
-		case commonState := <-confirmedCommonStateC:
-			newOrderC <- assigner.CalculateOptimalOrders(commonState, id)
-			lamp.SetLamps(commonState, id)
+		case sharedState := <-confirmedSharedStateCh:
+			newOrderCh <- assigner.CalculateOptimalOrders(sharedState, id)
+			lamp.SetLamps(sharedState, id)
 
 		default:
 			continue

@@ -17,8 +17,8 @@ Although we have made minor adjustments to the code to fit our project, it remai
 ### **assigner**
 Assigns the hall requests to different elevators based on an algorithm using the provided example code in project resources which is accesible [here](https://github.com/TTK4145/Project-resources/tree/master/cost_fns). Should have a main function that takes the elevatorstates and hallrequests as input and outputs which request are assigned to which elevators.
 
-### **commonstate**
-Is far from finished, but should create a struct which keeps track of the state of the whole system (all elevators and orders), as well as making sure all elevators have a syncronized worldview. This also includes functions to manange the commonstate-struct. A final-state-machine should be implented in order to use this commonstate in a logical way, so that it is in fact syncronized.
+### **sharedstate**
+Is far from finished, but should create a struct which keeps track of the state of the whole system (all elevators and orders), as well as making sure all elevators have a syncronized worldview. This also includes functions to manange the sharedstate-struct. A final-state-machine should be implented in order to use this sharedstate in a logical way, so that it is in fact syncronized.
 
 ### **network**
 TTK4145 developed this network module, which you can access [here](https://github.com/TTK4145/Network-go). 

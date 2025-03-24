@@ -2,7 +2,7 @@ package assigner
 
 import (
 	"Driver-go/config"
-	"Driver-go/distributor"
+	"Driver-go/coordinator"
 	"Driver-go/elevator"
 	"encoding/json"
 	"fmt"
@@ -12,29 +12,29 @@ import (
 )
 
 type HRAState struct {
-	Behaviour   string                 `json:"behaviour"`
-	Floor       int                    `json:"floor"`
-	Direction   string                 `json:"direction"`
-	CabRequests [config.NumFloors]bool `json:"cabRequests"`
+	behaviour   string                 `json:"behaviour"`
+	floor       int                    `json:"floor"`
+	direction   string                 `json:"direction"`
+	cabRequests [config.NumFloors]bool `json:"cabRequests"`
 }
 
 type HRAInput struct {
-	HallRequests [config.NumFloors][2]bool `json:"hallRequests"`
-	States       map[string]HRAState       `json:"states"`
+	hallRequests [config.NumFloors][2]bool `json:"hallRequests"`
+	states       map[string]HRAState       `json:"states"`
 }
 
-func CalculateOptimalOrders(commonState distributor.CommonState, id int) elevator.Orders {
+func CalculateOptimalOrders(sharedState coordinator.SharedState, id int) elevator.Orders {
 
 	stateMap := make(map[string]HRAState)
-	for i, v := range commonState.States {
-		if commonState.Ackmap[i] == distributor.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
+	for i, v := range sharedState.States {
+		if sharedState.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
-				Behaviour:   v.State.Behaviour.ToString(),
-				Floor:       v.State.Floor,
-				Direction:   v.State.Direction.ToString(),
-				CabRequests: v.CabRequests,
+				behaviour:   v.State.Behaviour.ToString(),
+				floor:       v.State.Floor,
+				direction:   v.State.Direction.ToString(),
+				cabRequests: v.CabRequests,
 			}
 		}
 	}
@@ -45,7 +45,7 @@ func CalculateOptimalOrders(commonState distributor.CommonState, id int) elevato
 		panic("no elevator states available for assignment!")
 	}
 
-	hraInput := HRAInput{commonState.HallRequests, stateMap}
+	hraInput := HRAInput{sharedState.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {

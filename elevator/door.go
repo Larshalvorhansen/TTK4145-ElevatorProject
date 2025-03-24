@@ -6,73 +6,73 @@ import (
 	"time"
 )
 
-type DoorState int
+type doorState int
 
 const (
-	Closed DoorState = iota
-	InCountDown
-	Obstructed
+	closed doorState = iota
+	inCountDown
+	obstructed
 )
 
-func Door(
-	doorClosedC chan<- bool,
-	doorOpenC <-chan bool,
-	obstructedC chan<- bool,
+func DoorLogic(
+	doorClosedCh chan<- bool,
+	doorOpenCh <-chan bool,
+	obstructedCh chan<- bool,
 ) {
 	hardware.SetDoorOpenLamp(false)
 
-	obstructionC := make(chan bool)
-	go hardware.PollObstructionSwitch(obstructionC)
+	obstructionCh := make(chan bool)
+	go hardware.PollObstructionSwitch(obstructionCh)
 
 	// Init state
 	obstruction := false
-	doorState := Closed
+	doorState := closed
 
 	timeCounter := time.NewTimer(time.Hour)
 	timeCounter.Stop()
 
 	for {
 		select {
-		case obstruction = <-obstructionC:
-			if !obstruction && doorState == Obstructed {
+		case obstruction = <-obstructionCh:
+			if !obstruction && doorState == obstructed {
 				hardware.SetDoorOpenLamp(false)
-				doorClosedC <- true
-				doorState = Closed
+				doorClosedCh <- true
+				doorState = closed
 			}
 			if obstruction {
-				obstructedC <- true
+				obstructedCh <- true
 			} else {
-				obstructedC <- false
+				obstructedCh <- false
 			}
 
-		case <-doorOpenC:
+		case <-doorOpenCh:
 			if obstruction {
-				obstructedC <- true
+				obstructedCh <- true
 			}
 			switch doorState {
-			case Closed:
+			case closed:
 				hardware.SetDoorOpenLamp(true)
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
-				doorState = InCountDown
-			case InCountDown:
+				doorState = inCountDown
+			case inCountDown:
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
 
-			case Obstructed:
+			case obstructed:
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
-				doorState = InCountDown
+				doorState = inCountDown
 			default:
-				panic("Door state not implemented")
+				panic("DoorLogic state not implemented")
 			}
 		case <-timeCounter.C:
-			if doorState != InCountDown {
-				panic("Door state not implemented")
+			if doorState != inCountDown {
+				panic("DoorLogic state not implemented")
 			}
 			if obstruction {
-				doorState = Obstructed
+				doorState = obstructed
 			} else {
 				hardware.SetDoorOpenLamp(false)
-				doorClosedC <- true
-				doorState = Closed
+				doorClosedCh <- true
+				doorState = closed
 			}
 		}
 	}
