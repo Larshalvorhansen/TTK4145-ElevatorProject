@@ -55,7 +55,7 @@ func main() {
 		networkTxCh,
 	)
 
-	go coordinator.Distributor(
+	go coordinator.Coordinator(
 		confirmedSharedStateCh,
 		deliveredOrderCh,
 		newStateCh,

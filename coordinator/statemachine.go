@@ -18,7 +18,7 @@ const (
 	State
 )
 
-func Distributor(
+func Coordinator(
 	confirmedSsCh chan<- SharedState,
 	deliveredOrderCh <-chan hardware.ButtonEvent,
 	newStateCh <-chan elevator.State,
