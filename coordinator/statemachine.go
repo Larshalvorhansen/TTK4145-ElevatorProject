@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-type stashType int
+type StashType int
 
 const (
-	none stashType = iota
-	add
-	remove
-	state
+	None StashType = iota
+	Add
+	Remove
+	State
 )
 
 func Distributor(
@@ -32,7 +32,7 @@ func Distributor(
 
 	go hardware.PollButtons(newOrderCh)
 
-	var stashType stashType
+	var stashType StashType
 	var newOrder hardware.ButtonEvent
 	var deliveredOrder hardware.ButtonEvent
 	var newState elevator.State
@@ -48,12 +48,12 @@ func Distributor(
 	for {
 		select {
 		case <-disconnectTimer.C:
-			ss.MakeOthersUnavailable(id)
+			ss.makeOthersUnavailable(id)
 			fmt.Println("Lost connection to network")
 			offline = true
 
 		case peers = <-peersCh:
-			ss.MakeOthersUnavailable(id)
+			ss.makeOthersUnavailable(id)
 			idle = false
 
 		case <-intervalTicker.C:
@@ -66,23 +66,23 @@ func Distributor(
 		case idle:
 			select {
 			case newOrder = <-newOrderCh:
-				stashType = add
-				ss.PrepNewSs(id)
-				ss.AddOrder(newOrder, id)
+				stashType = Add
+				ss.prepNewSs(id)
+				ss.addOrder(newOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
 			case deliveredOrder = <-deliveredOrderCh:
-				stashType = remove
-				ss.PrepNewSs(id)
-				ss.RemoveOrder(deliveredOrder, id)
+				stashType = Remove
+				ss.prepNewSs(id)
+				ss.removeOrder(deliveredOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
 			case newState = <-newStateCh:
-				stashType = state
-				ss.PrepNewSs(id)
-				ss.UpdateState(newState, id)
+				stashType = State
+				ss.prepNewSs(id)
+				ss.updateState(newState, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
@@ -90,7 +90,7 @@ func Distributor(
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 				if arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum) {
 					ss = arrivedSs
-					ss.MakeLostPeersUnavailable(peers)
+					ss.makeLostPeersUnavailable(peers)
 					ss.Ackmap[id] = Acked
 					idle = false
 				}
@@ -111,19 +111,19 @@ func Distributor(
 			case newOrder := <-newOrderCh:
 				if !ss.States[id].State.Motorstatus {
 					ss.Ackmap[id] = Acked
-					ss.AddCabCall(newOrder, id)
+					ss.addCabCall(newOrder, id)
 					confirmedSsCh <- ss
 				}
 
 			case deliveredOrder := <-deliveredOrderCh:
 				ss.Ackmap[id] = Acked
-				ss.RemoveOrder(deliveredOrder, id)
+				ss.removeOrder(deliveredOrder, id)
 				confirmedSsCh <- ss
 
 			case newState := <-newStateCh:
 				if !(newState.Obstructed || newState.Motorstatus) {
 					ss.Ackmap[id] = Acked
-					ss.UpdateState(newState, id)
+					ss.updateState(newState, id)
 					confirmedSsCh <- ss
 				}
 
@@ -142,42 +142,42 @@ func Distributor(
 				case arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum):
 					ss = arrivedSs
 					ss.Ackmap[id] = Acked
-					ss.MakeLostPeersUnavailable(peers)
+					ss.makeLostPeersUnavailable(peers)
 
-				case arrivedSs.FullyAcked(id):
+				case arrivedSs.fullyAcked(id):
 					ss = arrivedSs
 					confirmedSsCh <- ss
 
 					switch {
-					case ss.Origin != id && stashType != none:
-						ss.PrepNewSs(id)
+					case ss.Origin != id && stashType != None:
+						ss.prepNewSs(id)
 
 						switch stashType {
-						case add:
-							ss.AddOrder(newOrder, id)
+						case Add:
+							ss.addOrder(newOrder, id)
 							ss.Ackmap[id] = Acked
 
-						case remove:
-							ss.RemoveOrder(deliveredOrder, id)
+						case Remove:
+							ss.removeOrder(deliveredOrder, id)
 							ss.Ackmap[id] = Acked
 
-						case state:
-							ss.UpdateState(newState, id)
+						case State:
+							ss.updateState(newState, id)
 							ss.Ackmap[id] = Acked
 						}
 
-					case ss.Origin == id && stashType != none:
-						stashType = none
+					case ss.Origin == id && stashType != None:
+						stashType = None
 						idle = true
 
 					default:
 						idle = true
 					}
 
-				case ss.Equals(arrivedSs):
+				case ss.equals(arrivedSs):
 					ss = arrivedSs
 					ss.Ackmap[id] = Acked
-					ss.MakeLostPeersUnavailable(peers)
+					ss.makeLostPeersUnavailable(peers)
 
 				default:
 				}

@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-type doorState int
+type DoorState int
 
 const (
-	closed doorState = iota
-	inCountDown
-	obstructed
+	Closed DoorState = iota
+	InCountDown
+	Obstructed
 )
 
 func DoorLogic(
@@ -26,7 +26,7 @@ func DoorLogic(
 
 	// Init state
 	obstruction := false
-	doorState := closed
+	doorState := Closed
 
 	timeCounter := time.NewTimer(time.Hour)
 	timeCounter.Stop()
@@ -34,10 +34,10 @@ func DoorLogic(
 	for {
 		select {
 		case obstruction = <-obstructionCh:
-			if !obstruction && doorState == obstructed {
+			if !obstruction && doorState == Obstructed {
 				hardware.SetDoorOpenLamp(false)
 				doorClosedCh <- true
-				doorState = closed
+				doorState = Closed
 			}
 			if obstruction {
 				obstructedCh <- true
@@ -50,29 +50,29 @@ func DoorLogic(
 				obstructedCh <- true
 			}
 			switch doorState {
-			case closed:
+			case Closed:
 				hardware.SetDoorOpenLamp(true)
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
-				doorState = inCountDown
-			case inCountDown:
+				doorState = InCountDown
+			case InCountDown:
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
 
-			case obstructed:
+			case Obstructed:
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
-				doorState = inCountDown
+				doorState = InCountDown
 			default:
 				panic("DoorLogic state not implemented")
 			}
 		case <-timeCounter.C:
-			if doorState != inCountDown {
+			if doorState != InCountDown {
 				panic("DoorLogic state not implemented")
 			}
 			if obstruction {
-				doorState = obstructed
+				doorState = Obstructed
 			} else {
 				hardware.SetDoorOpenLamp(false)
 				doorClosedCh <- true
-				doorState = closed
+				doorState = Closed
 			}
 		}
 	}

@@ -6,15 +6,15 @@ import (
 
 const (
 	// Elevator setup
-	NumFloors       = 4
-	NumElevators    = 3
-	NumButtons      = 3
+	NumFloors    = 4
+	NumElevators = 3
+	NumButtons   = 3
 
 	// Networking
 	MessagePort = 20017
 
 	// Ch annel and buffer sizes
-	BufferSize = 1024
+	BufferSize       = 1024
 	ElevatorChBuffer = 16
 	HardwarePollRate = 20 * time.Millisecond
 

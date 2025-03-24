@@ -12,15 +12,15 @@ import (
 )
 
 type HRAState struct {
-	behaviour   string                 `json:"behaviour"`
-	floor       int                    `json:"floor"`
-	direction   string                 `json:"direction"`
-	cabRequests [config.NumFloors]bool `json:"cabRequests"`
+	Behaviour   string                 `json:"behaviour"`
+	Floor       int                    `json:"floor"`
+	Direction   string                 `json:"direction"`
+	CabRequests [config.NumFloors]bool `json:"cabRequests"`
 }
 
 type HRAInput struct {
-	hallRequests [config.NumFloors][2]bool `json:"hallRequests"`
-	states       map[string]HRAState       `json:"states"`
+	HallRequests [config.NumFloors][2]bool `json:"hallRequests"`
+	States       map[string]HRAState       `json:"states"`
 }
 
 func CalculateOptimalOrders(sharedState coordinator.SharedState, id int) elevator.Orders {
@@ -31,10 +31,10 @@ func CalculateOptimalOrders(sharedState coordinator.SharedState, id int) elevato
 			continue
 		} else {
 			stateMap[strconv.Itoa(i)] = HRAState{
-				behaviour:   v.State.Behaviour.ToString(),
-				floor:       v.State.Floor,
-				direction:   v.State.Direction.ToString(),
-				cabRequests: v.CabRequests,
+				Behaviour:   v.State.Behaviour.ToString(),
+				Floor:       v.State.Floor,
+				Direction:   v.State.Direction.ToString(),
+				CabRequests: v.CabRequests,
 			}
 		}
 	}

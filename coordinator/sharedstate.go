@@ -8,10 +8,10 @@ import (
 	"reflect"
 )
 
-type ackStatus int
+type AckStatus int
 
 const (
-	notAcked ackStatus = iota
+	NotAcked AckStatus = iota
 	Acked
 	NotAvailable
 )
@@ -24,12 +24,12 @@ type LocalState struct {
 type SharedState struct {
 	SeqNum       int
 	Origin       int
-	Ackmap       [config.NumElevators]ackStatus
+	Ackmap       [config.NumElevators]AckStatus
 	HallRequests [config.NumFloors][2]bool
 	States       [config.NumElevators]LocalState
 }
 
-func (ss *SharedState) AddOrder(newOrder hardware.ButtonEvent, id int) {
+func (ss *SharedState) addOrder(newOrder hardware.ButtonEvent, id int) {
 	if newOrder.Button == hardware.BT_Cab {
 		ss.States[id].CabRequests[newOrder.Floor] = true
 	} else {
@@ -37,13 +37,13 @@ func (ss *SharedState) AddOrder(newOrder hardware.ButtonEvent, id int) {
 	}
 }
 
-func (ss *SharedState) AddCabCall(newOrder hardware.ButtonEvent, id int) {
+func (ss *SharedState) addCabCall(newOrder hardware.ButtonEvent, id int) {
 	if newOrder.Button == hardware.BT_Cab {
 		ss.States[id].CabRequests[newOrder.Floor] = true
 	}
 }
 
-func (ss *SharedState) RemoveOrder(deliveredOrder hardware.ButtonEvent, id int) {
+func (ss *SharedState) removeOrder(deliveredOrder hardware.ButtonEvent, id int) {
 	if deliveredOrder.Button == hardware.BT_Cab {
 		ss.States[id].CabRequests[deliveredOrder.Floor] = false
 	} else {
@@ -51,38 +51,38 @@ func (ss *SharedState) RemoveOrder(deliveredOrder hardware.ButtonEvent, id int) 
 	}
 }
 
-func (ss *SharedState) UpdateState(newState elevator.State, id int) {
+func (ss *SharedState) updateState(newState elevator.State, id int) {
 	ss.States[id] = LocalState{
 		State:       newState,
 		CabRequests: ss.States[id].CabRequests,
 	}
 }
 
-func (ss *SharedState) FullyAcked(id int) bool {
+func (ss *SharedState) fullyAcked(id int) bool {
 	if ss.Ackmap[id] == NotAvailable {
 		return false
 	}
 	for index := range ss.Ackmap {
-		if ss.Ackmap[index] == notAcked {
+		if ss.Ackmap[index] == NotAcked {
 			return false
 		}
 	}
 	return true
 }
 
-func (oldSs SharedState) Equals(newSs SharedState) bool {
-	oldSs.Ackmap = [config.NumElevators]ackStatus{}
-	newSs.Ackmap = [config.NumElevators]ackStatus{}
+func (oldSs SharedState) equals(newSs SharedState) bool {
+	oldSs.Ackmap = [config.NumElevators]AckStatus{}
+	newSs.Ackmap = [config.NumElevators]AckStatus{}
 	return reflect.DeepEqual(oldSs, newSs)
 }
 
-func (ss *SharedState) MakeLostPeersUnavailable(peers peers.PeerUpdate) {
+func (ss *SharedState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, id := range peers.Lost {
 		ss.Ackmap[id] = NotAvailable
 	}
 }
 
-func (ss *SharedState) MakeOthersUnavailable(id int) {
+func (ss *SharedState) makeOthersUnavailable(id int) {
 	for elev := range ss.Ackmap {
 		if elev != id {
 			ss.Ackmap[elev] = NotAvailable
@@ -90,12 +90,12 @@ func (ss *SharedState) MakeOthersUnavailable(id int) {
 	}
 }
 
-func (ss *SharedState) PrepNewSs(id int) {
+func (ss *SharedState) prepNewSs(id int) {
 	ss.SeqNum++
 	ss.Origin = id
 	for id := range ss.Ackmap {
 		if ss.Ackmap[id] == Acked {
-			ss.Ackmap[id] = notAcked
+			ss.Ackmap[id] = NotAcked
 		}
 	}
 }

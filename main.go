@@ -16,7 +16,7 @@ import (
 
 func main() {
 
-	serverPort := flag.Int("port", 15658, "Elevator server port (default: 15657)")
+	serverPort := flag.Int("port", 15657, "Elevator server port (default: 15657)")
 	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
 
