@@ -69,33 +69,27 @@ func Elevator(
 			switch state.Behaviour {
 			case Idle:
 				switch {
-				case orders[state.Floor][state.Direction] || orders[state.Floor][hardware.BT_Cab]:
+				// Check if elevator is at the right floor
+				case orders[state.Floor][state.Direction] || orders[state.Floor][state.Direction.FlipDirection()] || orders[state.Floor][hardware.BT_Cab]:
 					doorOpenCh <- true
+					if orders[state.Floor][state.Direction.FlipDirection()] {
+						state.Direction = state.Direction.FlipDirection()
+					}
 					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
 					state.Behaviour = DoorOpen
 					newStateCh <- state
 
-				case orders[state.Floor][state.Direction.FlipDirection()]:
-					doorOpenCh <- true
-					state.Direction = state.Direction.FlipDirection()
-					SendOrderDone(state.Floor, state.Direction, orders, deliveredOrderCh)
-					state.Behaviour = DoorOpen
-					newStateCh <- state
-
-				case orders.OrderInDirection(state.Floor, state.Direction):
+				// Check if the elevator has orders over or under the current floor
+				case orders.OrderInDirection(state.Floor, state.Direction) || orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
+					if orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()) {
+						state.Direction = state.Direction.FlipDirection()
+					}
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					newStateCh <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorCh <- false
 
-				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
-					state.Direction = state.Direction.FlipDirection()
-					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
-					state.Behaviour = Moving
-					newStateCh <- state
-					motorTimer = time.NewTimer(config.WatchdogTime)
-					motorCh <- false
 				default:
 				}
 
