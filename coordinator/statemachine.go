@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-type StashType int
+type stashType int
 
 const (
-	None StashType = iota
-	Add
-	Remove
-	State
+	none stashType = iota
+	add
+	remove
+	state
 )
 
 func Distributor(
@@ -32,7 +32,7 @@ func Distributor(
 
 	go hardware.PollButtons(newOrderCh)
 
-	var stashType StashType
+	var stashType stashType
 	var newOrder hardware.ButtonEvent
 	var deliveredOrder hardware.ButtonEvent
 	var newState elevator.State
@@ -66,21 +66,21 @@ func Distributor(
 		case idle:
 			select {
 			case newOrder = <-newOrderCh:
-				stashType = Add
+				stashType = add
 				ss.PrepNewSs(id)
 				ss.AddOrder(newOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
 			case deliveredOrder = <-deliveredOrderCh:
-				stashType = Remove
+				stashType = remove
 				ss.PrepNewSs(id)
 				ss.RemoveOrder(deliveredOrder, id)
 				ss.Ackmap[id] = Acked
 				idle = false
 
 			case newState = <-newStateCh:
-				stashType = State
+				stashType = state
 				ss.PrepNewSs(id)
 				ss.UpdateState(newState, id)
 				ss.Ackmap[id] = Acked
@@ -149,25 +149,25 @@ func Distributor(
 					confirmedSsCh <- ss
 
 					switch {
-					case ss.Origin != id && stashType != None:
+					case ss.Origin != id && stashType != none:
 						ss.PrepNewSs(id)
 
 						switch stashType {
-						case Add:
+						case add:
 							ss.AddOrder(newOrder, id)
 							ss.Ackmap[id] = Acked
 
-						case Remove:
+						case remove:
 							ss.RemoveOrder(deliveredOrder, id)
 							ss.Ackmap[id] = Acked
 
-						case State:
+						case state:
 							ss.UpdateState(newState, id)
 							ss.Ackmap[id] = Acked
 						}
 
-					case ss.Origin == id && stashType != None:
-						stashType = None
+					case ss.Origin == id && stashType != none:
+						stashType = none
 						idle = true
 
 					default:

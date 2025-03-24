@@ -8,10 +8,10 @@ import (
 	"reflect"
 )
 
-type AckStatus int
+type ackStatus int
 
 const (
-	NotAcked AckStatus = iota
+	notAcked ackStatus = iota
 	Acked
 	NotAvailable
 )
@@ -24,7 +24,7 @@ type LocalState struct {
 type SharedState struct {
 	SeqNum       int
 	Origin       int
-	Ackmap       [config.NumElevators]AckStatus
+	Ackmap       [config.NumElevators]ackStatus
 	HallRequests [config.NumFloors][2]bool
 	States       [config.NumElevators]LocalState
 }
@@ -63,7 +63,7 @@ func (ss *SharedState) FullyAcked(id int) bool {
 		return false
 	}
 	for index := range ss.Ackmap {
-		if ss.Ackmap[index] == NotAcked {
+		if ss.Ackmap[index] == notAcked {
 			return false
 		}
 	}
@@ -71,8 +71,8 @@ func (ss *SharedState) FullyAcked(id int) bool {
 }
 
 func (oldSs SharedState) Equals(newSs SharedState) bool {
-	oldSs.Ackmap = [config.NumElevators]AckStatus{}
-	newSs.Ackmap = [config.NumElevators]AckStatus{}
+	oldSs.Ackmap = [config.NumElevators]ackStatus{}
+	newSs.Ackmap = [config.NumElevators]ackStatus{}
 	return reflect.DeepEqual(oldSs, newSs)
 }
 
@@ -95,7 +95,7 @@ func (ss *SharedState) PrepNewSs(id int) {
 	ss.Origin = id
 	for id := range ss.Ackmap {
 		if ss.Ackmap[id] == Acked {
-			ss.Ackmap[id] = NotAcked
+			ss.Ackmap[id] = notAcked
 		}
 	}
 }
