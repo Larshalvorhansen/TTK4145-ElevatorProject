@@ -28,16 +28,22 @@ func (o Orders) OrderInDirection(floor int, dir Direction) bool {
 	return false
 }
 
+func OrderAtFloor(floor int, orders Orders) bool {
+	return orders[floor][Up] || orders[floor][Down] || orders[floor][hardware.BT_Cab]
+}
+
+
+
 func SendOrderDone(
 	floor int,
 	dir Direction,
-	o Orders,
+	orders Orders,
 	orderDoneCh chan<- hardware.ButtonEvent,
 ) {
-	if o[floor][hardware.BT_Cab] {
+	if orders[floor][hardware.BT_Cab] {
 		orderDoneCh <- hardware.ButtonEvent{Floor: floor, Button: hardware.BT_Cab}
 	}
-	if o[floor][dir] {
+	if orders[floor][dir] {
 		orderDoneCh <- hardware.ButtonEvent{Floor: floor, Button: dir.ToButtonType()}
 	}
 }
