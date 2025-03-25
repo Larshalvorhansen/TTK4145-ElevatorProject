@@ -1,3 +1,7 @@
+// The following implementation is based on the example provided by TTK4145's project resources:
+// https://github.com/TTK4145/Project-resources/blob/master/cost_fns/usage_examples/example.go
+// Modifications were made to integrate it into the current project's codebase and requirements.
+
 package assigner
 
 import (
@@ -11,7 +15,10 @@ import (
 	"strconv"
 )
 
-type HRAState struct {
+// Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
+// This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
+
+type HRAElevState struct {
 	Behaviour   string                 `json:"behaviour"`
 	Floor       int                    `json:"floor"`
 	Direction   string                 `json:"direction"`
@@ -20,32 +27,10 @@ type HRAState struct {
 
 type HRAInput struct {
 	HallRequests [config.NumFloors][2]bool `json:"hallRequests"`
-	States       map[string]HRAState       `json:"states"`
+	States       map[string]HRAElevState   `json:"states"`
 }
 
 func AssignOrders(ss coordinator.SharedState, id int) elevator.Orders {
-
-	stateMap := make(map[string]HRAState)
-	for i, v := range ss.States {
-		if ss.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus { // removed the additional "... || v.State,Obstructed" for single elevator use
-			continue
-		} else {
-			stateMap[strconv.Itoa(i)] = HRAState{
-				Behaviour:   v.State.Behaviour.ToString(),
-				Floor:       v.State.Floor,
-				Direction:   v.State.Direction.ToString(),
-				CabRequests: v.CabRequests,
-			}
-		}
-	}
-
-	// For debugging
-	if len(stateMap) == 0 {
-		fmt.Println("no elevator states available for assignment!")
-		panic("no elevator states available for assignment!")
-	}
-
-	hraInput := HRAInput{ss.HallRequests, stateMap}
 
 	hraExecutable := ""
 	switch runtime.GOOS {
@@ -59,24 +44,41 @@ func AssignOrders(ss coordinator.SharedState, id int) elevator.Orders {
 		panic("OS not supported")
 	}
 
-	jsonBytes, err := json.Marshal(hraInput)
+	stateMap := make(map[string]HRAElevState)
+	for i, v := range ss.States {
+		if ss.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus || v.State.Obstructed { // For single elevator use, comment out the last two conditions
+			continue
+		} else {
+			stateMap[strconv.Itoa(i)] = HRAElevState{
+				Behaviour:   v.State.Behaviour.ToString(),
+				Floor:       v.State.Floor,
+				Direction:   v.State.Direction.ToString(),
+				CabRequests: v.CabRequests,
+			}
+		}
+	}
+
+	// For debugging
+	if len(stateMap) == 0 {
+		panic("no elevator states available for assignment!")
+	}
+
+	input := HRAInput{ss.HallRequests, stateMap}
+
+	jsonBytes, err := json.Marshal(input)
 	if err != nil {
-		fmt.Println("json.Marshal error: ", err)
-		panic("json.Marshal error")
+		panic(fmt.Sprintf("json.Marshal error: %v", err))
 	}
 
 	ret, err := exec.Command("assigner/executables/"+hraExecutable, "-i", "--includeCab", string(jsonBytes)).CombinedOutput()
 	if err != nil {
-		fmt.Println("exec.Command error: ", err)
-		fmt.Println(string(ret))
-		panic("exec.Command error")
+		panic(fmt.Sprintf("exec.Command error: %v, output: %s", err, string(ret)))
 	}
 
 	output := new(map[string]elevator.Orders)
 	err = json.Unmarshal(ret, &output)
 	if err != nil {
-		fmt.Println("json.Unmarshal error: ", err)
-		panic("json.Unmarshal error")
+		panic(fmt.Sprintf("json.Unmarshal error: %v", err))
 	}
 
 	return (*output)[strconv.Itoa(id)]
