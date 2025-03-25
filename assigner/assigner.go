@@ -45,22 +45,24 @@ func AssignOrders(ss coordinator.SharedState, id int) elevator.Orders {
 	}
 
 	stateMap := make(map[string]HRAElevState)
-	for i, v := range ss.States {
-		if ss.Ackmap[i] == coordinator.NotAvailable || v.State.Motorstatus || v.State.Obstructed { // For single elevator use, comment out the last two conditions
+
+	for id, elev := range ss.States {
+		unavailable := ss.Ackmap[id] == coordinator.NotAvailable ||
+			elev.State.Motorstatus ||
+			elev.State.Obstructed // For single elevator use, comment out last two conditions
+
+		if unavailable {
 			continue
-		} else {
-			stateMap[strconv.Itoa(i)] = HRAElevState{
-				Behaviour:   v.State.Behaviour.ToString(),
-				Floor:       v.State.Floor,
-				Direction:   v.State.Direction.ToString(),
-				CabRequests: v.CabRequests,
-			}
+		}
+		stateMap[strconv.Itoa(id)] = HRAElevState{
+			Behaviour:   elev.State.Behaviour.ToString(),
+			Floor:       elev.State.Floor,
+			Direction:   elev.State.Direction.ToString(),
+			CabRequests: elev.CabRequests,
 		}
 	}
-
-	// For debugging
 	if len(stateMap) == 0 {
-		panic("no elevator states available for assignment!")
+		panic("No elevator states available for assignment!")
 	}
 
 	input := HRAInput{ss.HallRequests, stateMap}
