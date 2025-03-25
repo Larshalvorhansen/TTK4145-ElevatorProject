@@ -29,37 +29,37 @@ type SharedState struct {
 	States       [config.NumElevators]LocalState
 }
 
-func (ss *SharedState) addOrder(newOrder hardware.ButtonEvent, id int) {
+func (ss *SharedState) addOrder(newOrder hardware.ButtonEvent, localID int) {
 	if newOrder.Button == hardware.BT_Cab {
-		ss.States[id].CabRequests[newOrder.Floor] = true
+		ss.States[localID].CabRequests[newOrder.Floor] = true
 	} else {
 		ss.HallRequests[newOrder.Floor][newOrder.Button] = true
 	}
 }
 
-func (ss *SharedState) addCabCall(newOrder hardware.ButtonEvent, id int) {
+func (ss *SharedState) addCabCall(newOrder hardware.ButtonEvent, localID int) {
 	if newOrder.Button == hardware.BT_Cab {
-		ss.States[id].CabRequests[newOrder.Floor] = true
+		ss.States[localID].CabRequests[newOrder.Floor] = true
 	}
 }
 
-func (ss *SharedState) removeOrder(deliveredOrder hardware.ButtonEvent, id int) {
+func (ss *SharedState) removeOrder(deliveredOrder hardware.ButtonEvent, localID int) {
 	if deliveredOrder.Button == hardware.BT_Cab {
-		ss.States[id].CabRequests[deliveredOrder.Floor] = false
+		ss.States[localID].CabRequests[deliveredOrder.Floor] = false
 	} else {
 		ss.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false
 	}
 }
 
-func (ss *SharedState) updateState(newState elevator.State, id int) {
-	ss.States[id] = LocalState{
+func (ss *SharedState) updateState(newState elevator.State, localID int) {
+	ss.States[localID] = LocalState{
 		State:       newState,
-		CabRequests: ss.States[id].CabRequests,
+		CabRequests: ss.States[localID].CabRequests,
 	}
 }
 
-func (ss *SharedState) isFullyConfirmed(id int) bool {
-	if ss.Availability[id] == Unavailable {
+func (ss *SharedState) isFullyConfirmed(localID int) bool {
+	if ss.Availability[localID] == Unavailable {
 		return false
 	}
 	for index := range ss.Availability {
@@ -77,25 +77,25 @@ func (oldSs SharedState) isEqual(newSs SharedState) bool {
 }
 
 func (ss *SharedState) setLostPeersUnavailable(peers peers.PeerUpdate) {
-	for _, id := range peers.Lost {
-		ss.Availability[id] = Unavailable
+	for _, localID := range peers.Lost {
+		ss.Availability[localID] = Unavailable
 	}
 }
 
-func (ss *SharedState) setAllPeersUnavailableExcept(id int) {
+func (ss *SharedState) setAllPeersUnavailableExcept(localID int) {
 	for elev := range ss.Availability {
-		if elev != id {
+		if elev != localID {
 			ss.Availability[elev] = Unavailable
 		}
 	}
 }
 
-func (ss *SharedState) prepareNewState(id int) {
+func (ss *SharedState) prepareNewState(localID int) {
 	ss.Version++
-	ss.OriginID = id
-	for id := range ss.Availability {
-		if ss.Availability[id] == Confirmed {
-			ss.Availability[id] = Unconfirmed
+	ss.OriginID = localID
+	for localID := range ss.Availability {
+		if ss.Availability[localID] == Confirmed {
+			ss.Availability[localID] = Unconfirmed
 		}
 	}
 }
