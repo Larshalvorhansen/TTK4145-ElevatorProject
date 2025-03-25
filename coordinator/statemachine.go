@@ -49,7 +49,7 @@ func Coordinator(
 		select {
 		case <-disconnectTimer.C:
 			ss.setAllPeersUnavailableExcept(localID)
-			fmt.Println(fmt.Sprintf("[Elevator %d] Lost connection to all peers! Entering offline mode", localID))
+			fmt.Printf("[Elevator %d] Lost connection to all peers! Entering offline mode\n", localID)
 			offline = true
 
 		case peers = <-peerUpdateRxCh:
@@ -86,10 +86,10 @@ func Coordinator(
 				ss.Availability[localID] = Confirmed
 				idle = false
 
-			case arrivedSs := <-sharedStateRxCh:
+			case receivedSharedState := <-sharedStateRxCh:
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
-				if arrivedSs.Version > ss.Version || (arrivedSs.OriginID > ss.OriginID && arrivedSs.Version == ss.Version) {
-					ss = arrivedSs
+				if receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version) {
+					ss = receivedSharedState
 					ss.setLostPeersUnavailable(peers)
 					ss.Availability[localID] = Confirmed
 					idle = false
@@ -102,7 +102,7 @@ func Coordinator(
 			select {
 			case <-sharedStateRxCh:
 				if ss.States[localID].CabRequests == [config.NumFloors]bool{} {
-					fmt.Println(fmt.Sprintf("[Elevator %d] Network connection restored. Back online!", localID))
+					fmt.Printf("[Elevator %d] Network connection restored. Back online!\n", localID)
 					offline = false
 				} else {
 					ss.Availability[localID] = Unavailable
@@ -132,20 +132,20 @@ func Coordinator(
 
 		case !idle:
 			select {
-			case arrivedSs := <-sharedStateRxCh:
-				if arrivedSs.Version < ss.Version {
+			case receivedSharedState := <-sharedStateRxCh:
+				if receivedSharedState.Version < ss.Version {
 					break
 				}
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
-				case arrivedSs.Version > ss.Version || (arrivedSs.OriginID > ss.OriginID && arrivedSs.Version == ss.Version):
-					ss = arrivedSs
+				case receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version):
+					ss = receivedSharedState
 					ss.Availability[localID] = Confirmed
 					ss.setLostPeersUnavailable(peers)
 
-				case arrivedSs.isFullyConfirmed(localID):
-					ss = arrivedSs
+				case receivedSharedState.isFullyConfirmed(localID):
+					ss = receivedSharedState
 					confirmedSharedStateCh <- ss
 
 					switch {
@@ -174,8 +174,8 @@ func Coordinator(
 						idle = true
 					}
 
-				case ss.isEqual(arrivedSs):
-					ss = arrivedSs
+				case ss.isEqual(receivedSharedState):
+					ss = receivedSharedState
 					ss.Availability[localID] = Confirmed
 					ss.setLostPeersUnavailable(peers)
 
