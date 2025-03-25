@@ -40,7 +40,7 @@ func Coordinator(
 	var ss SharedState
 
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
-	intervalTicker := time.NewTicker(config.CoordinatorTick)
+	sharedStateTicker := time.NewTicker(config.SharedStateBcastInterval)
 
 	idle := true
 	offline := false
@@ -49,14 +49,14 @@ func Coordinator(
 		select {
 		case <-disconnectTimer.C:
 			ss.setAllPeersUnavailableExcept(localID)
-			fmt.Println("Lost connection to network")
+			fmt.Println(fmt.Sprintf("[Elevator %d] Lost connection to all peers! Entering offline mode", localID))
 			offline = true
 
 		case peers = <-peerUpdateRxCh:
 			ss.setAllPeersUnavailableExcept(localID)
 			idle = false
 
-		case <-intervalTicker.C:
+		case <-sharedStateTicker.C:
 			sharedStateTxCh <- ss
 
 		default:
@@ -102,7 +102,7 @@ func Coordinator(
 			select {
 			case <-sharedStateRxCh:
 				if ss.States[localID].CabRequests == [config.NumFloors]bool{} {
-					fmt.Println("Regained connection to network")
+					fmt.Println(fmt.Sprintf("[Elevator %d] Network connection restored. Back online!", localID))
 					offline = false
 				} else {
 					ss.Availability[localID] = Unavailable

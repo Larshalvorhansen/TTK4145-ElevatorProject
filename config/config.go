@@ -18,10 +18,10 @@ const (
 	ElevatorChBuffer = 16
 
 	// -------------------- Timing --------------------
-	DisconnectTime    = 1 * time.Second
-	DoorOpenDuration  = 3 * time.Second
-	WatchdogTime      = 4 * time.Second
-	PeerBcastInterval = 15 * time.Millisecond
-	CoordinatorTick   = 15 * time.Millisecond
-	HardwarePollRate  = 20 * time.Millisecond
+	DisconnectTime           = 1 * time.Second
+	DoorOpenDuration         = 3 * time.Second
+	WatchdogTime             = 4 * time.Second
+	PeerBcastInterval        = 15 * time.Millisecond
+	SharedStateBcastInterval = 15 * time.Millisecond
+	HardwarePollRate         = 20 * time.Millisecond
 )

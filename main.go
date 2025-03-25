@@ -34,7 +34,7 @@ func main() {
 	sharedStateTxCh := make(chan coordinator.SharedState, config.BufferSize)
 	sharedStateRxCh := make(chan coordinator.SharedState, config.BufferSize)
 	peerUpdateRxCh := make(chan peers.PeerUpdate, config.BufferSize)
-	peersTxCh := make(chan bool, config.BufferSize)
+	peerEnableTxCh := make(chan bool, config.BufferSize)
 
 	go peers.Receiver(
 		config.MessagePort,
@@ -43,7 +43,7 @@ func main() {
 	go peers.Transmitter(
 		config.MessagePort,
 		localID,
-		peersTxCh,
+		peerEnableTxCh,
 	)
 
 	go bcast.Receiver(
