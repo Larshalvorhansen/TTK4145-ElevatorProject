@@ -69,21 +69,21 @@ func Coordinator(
 				pendingAction = addOrder
 				ss.prepareNewState(localID)
 				ss.addOrder(newOrder, localID)
-				ss.Availability[localID] = Confirmed
+				ss.confirm(localID)
 				idle = false
 
 			case deliveredOrder = <-orderDeliveredCh:
 				pendingAction = removeOrder
 				ss.prepareNewState(localID)
 				ss.removeOrder(deliveredOrder, localID)
-				ss.Availability[localID] = Confirmed
+				ss.confirm(localID)
 				idle = false
 
 			case newState = <-localStateCh:
 				pendingAction = updateState
 				ss.prepareNewState(localID)
 				ss.updateState(newState, localID)
-				ss.Availability[localID] = Confirmed
+				ss.confirm(localID)
 				idle = false
 
 			case receivedSharedState := <-sharedStateRxCh:
@@ -91,7 +91,7 @@ func Coordinator(
 				if receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version) {
 					ss = receivedSharedState
 					ss.setLostPeersUnavailable(peers)
-					ss.Availability[localID] = Confirmed
+					ss.confirm(localID)
 					idle = false
 				}
 
@@ -110,19 +110,19 @@ func Coordinator(
 
 			case newOrder := <-newOrderCh:
 				if !ss.States[localID].State.Motorstatus {
-					ss.Availability[localID] = Confirmed
+					ss.confirm(localID)
 					ss.addCabCall(newOrder, localID)
 					confirmedSharedStateCh <- ss
 				}
 
 			case deliveredOrder := <-orderDeliveredCh:
-				ss.Availability[localID] = Confirmed
+				ss.confirm(localID)
 				ss.removeOrder(deliveredOrder, localID)
 				confirmedSharedStateCh <- ss
 
 			case newState := <-localStateCh:
 				if !(newState.Obstructed || newState.Motorstatus) {
-					ss.Availability[localID] = Confirmed
+					ss.confirm(localID)
 					ss.updateState(newState, localID)
 					confirmedSharedStateCh <- ss
 				}
@@ -141,7 +141,7 @@ func Coordinator(
 				switch {
 				case receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version):
 					ss = receivedSharedState
-					ss.Availability[localID] = Confirmed
+					ss.confirm(localID)
 					ss.setLostPeersUnavailable(peers)
 
 				case receivedSharedState.isFullyConfirmed(localID):
@@ -155,15 +155,15 @@ func Coordinator(
 						switch pendingAction {
 						case addOrder:
 							ss.addOrder(newOrder, localID)
-							ss.Availability[localID] = Confirmed
+							ss.confirm(localID)
 
 						case removeOrder:
 							ss.removeOrder(deliveredOrder, localID)
-							ss.Availability[localID] = Confirmed
+							ss.confirm(localID)
 
 						case updateState:
 							ss.updateState(newState, localID)
-							ss.Availability[localID] = Confirmed
+							ss.confirm(localID)
 						}
 
 					case ss.OriginID == localID && pendingAction != noAction:
@@ -174,9 +174,9 @@ func Coordinator(
 						idle = true
 					}
 
-				case ss.isEqual(receivedSharedState):
+				case ss.inSyncWith(receivedSharedState):
 					ss = receivedSharedState
-					ss.Availability[localID] = Confirmed
+					ss.confirm(localID)
 					ss.setLostPeersUnavailable(peers)
 
 				default:
