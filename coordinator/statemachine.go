@@ -19,13 +19,13 @@ const (
 )
 
 func Coordinator(
-	confirmedSsCh chan<- SharedState,
-	deliveredOrderCh <-chan hardware.ButtonEvent,
-	newStateCh <-chan elevator.State,
-	networkTxCh chan<- SharedState,
-	networkRxCh <-chan SharedState,
-	peersCh <-chan peers.PeerUpdate,
-	id int,
+	confirmedSharedStateCh chan<- SharedState,
+	orderDeliveredCh <-chan hardware.ButtonEvent,
+	localStateCh <-chan elevator.State,
+	sharedStateTxCh chan<- SharedState,
+	sharedStateRxCh <-chan SharedState,
+	peerUpdateRxCh <-chan peers.PeerUpdate,
+	localID int,
 ) {
 
 	newOrderCh := make(chan hardware.ButtonEvent, config.BufferSize)
@@ -48,16 +48,16 @@ func Coordinator(
 	for {
 		select {
 		case <-disconnectTimer.C:
-			ss.setAllPeersUnavailableExcept(id)
+			ss.setAllPeersUnavailableExcept(localID)
 			fmt.Println("Lost connection to network")
 			offline = true
 
-		case peers = <-peersCh:
-			ss.setAllPeersUnavailableExcept(id)
+		case peers = <-peerUpdateRxCh:
+			ss.setAllPeersUnavailableExcept(localID)
 			idle = false
 
 		case <-intervalTicker.C:
-			networkTxCh <- ss
+			sharedStateTxCh <- ss
 
 		default:
 		}
@@ -67,31 +67,31 @@ func Coordinator(
 			select {
 			case newOrder = <-newOrderCh:
 				pendingAction = addOrder
-				ss.prepareNewState(id)
-				ss.addOrder(newOrder, id)
-				ss.Availability[id] = Confirmed
+				ss.prepareNewState(localID)
+				ss.addOrder(newOrder, localID)
+				ss.Availability[localID] = Confirmed
 				idle = false
 
-			case deliveredOrder = <-deliveredOrderCh:
+			case deliveredOrder = <-orderDeliveredCh:
 				pendingAction = removeOrder
-				ss.prepareNewState(id)
-				ss.removeOrder(deliveredOrder, id)
-				ss.Availability[id] = Confirmed
+				ss.prepareNewState(localID)
+				ss.removeOrder(deliveredOrder, localID)
+				ss.Availability[localID] = Confirmed
 				idle = false
 
-			case newState = <-newStateCh:
+			case newState = <-localStateCh:
 				pendingAction = updateState
-				ss.prepareNewState(id)
-				ss.updateState(newState, id)
-				ss.Availability[id] = Confirmed
+				ss.prepareNewState(localID)
+				ss.updateState(newState, localID)
+				ss.Availability[localID] = Confirmed
 				idle = false
 
-			case arrivedSs := <-networkRxCh:
+			case arrivedSs := <-sharedStateRxCh:
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 				if arrivedSs.Version > ss.Version || (arrivedSs.OriginID > ss.OriginID && arrivedSs.Version == ss.Version) {
 					ss = arrivedSs
 					ss.setLostPeersUnavailable(peers)
-					ss.Availability[id] = Confirmed
+					ss.Availability[localID] = Confirmed
 					idle = false
 				}
 
@@ -100,31 +100,31 @@ func Coordinator(
 
 		case offline:
 			select {
-			case <-networkRxCh:
-				if ss.States[id].CabRequests == [config.NumFloors]bool{} {
+			case <-sharedStateRxCh:
+				if ss.States[localID].CabRequests == [config.NumFloors]bool{} {
 					fmt.Println("Regained connection to network")
 					offline = false
 				} else {
-					ss.Availability[id] = Unavailable
+					ss.Availability[localID] = Unavailable
 				}
 
 			case newOrder := <-newOrderCh:
-				if !ss.States[id].State.Motorstatus {
-					ss.Availability[id] = Confirmed
-					ss.addCabCall(newOrder, id)
-					confirmedSsCh <- ss
+				if !ss.States[localID].State.Motorstatus {
+					ss.Availability[localID] = Confirmed
+					ss.addCabCall(newOrder, localID)
+					confirmedSharedStateCh <- ss
 				}
 
-			case deliveredOrder := <-deliveredOrderCh:
-				ss.Availability[id] = Confirmed
-				ss.removeOrder(deliveredOrder, id)
-				confirmedSsCh <- ss
+			case deliveredOrder := <-orderDeliveredCh:
+				ss.Availability[localID] = Confirmed
+				ss.removeOrder(deliveredOrder, localID)
+				confirmedSharedStateCh <- ss
 
-			case newState := <-newStateCh:
+			case newState := <-localStateCh:
 				if !(newState.Obstructed || newState.Motorstatus) {
-					ss.Availability[id] = Confirmed
-					ss.updateState(newState, id)
-					confirmedSsCh <- ss
+					ss.Availability[localID] = Confirmed
+					ss.updateState(newState, localID)
+					confirmedSharedStateCh <- ss
 				}
 
 			default:
@@ -132,7 +132,7 @@ func Coordinator(
 
 		case !idle:
 			select {
-			case arrivedSs := <-networkRxCh:
+			case arrivedSs := <-sharedStateRxCh:
 				if arrivedSs.Version < ss.Version {
 					break
 				}
@@ -141,32 +141,32 @@ func Coordinator(
 				switch {
 				case arrivedSs.Version > ss.Version || (arrivedSs.OriginID > ss.OriginID && arrivedSs.Version == ss.Version):
 					ss = arrivedSs
-					ss.Availability[id] = Confirmed
+					ss.Availability[localID] = Confirmed
 					ss.setLostPeersUnavailable(peers)
 
-				case arrivedSs.isFullyConfirmed(id):
+				case arrivedSs.isFullyConfirmed(localID):
 					ss = arrivedSs
-					confirmedSsCh <- ss
+					confirmedSharedStateCh <- ss
 
 					switch {
-					case ss.OriginID != id && pendingAction != noAction:
-						ss.prepareNewState(id)
+					case ss.OriginID != localID && pendingAction != noAction:
+						ss.prepareNewState(localID)
 
 						switch pendingAction {
 						case addOrder:
-							ss.addOrder(newOrder, id)
-							ss.Availability[id] = Confirmed
+							ss.addOrder(newOrder, localID)
+							ss.Availability[localID] = Confirmed
 
 						case removeOrder:
-							ss.removeOrder(deliveredOrder, id)
-							ss.Availability[id] = Confirmed
+							ss.removeOrder(deliveredOrder, localID)
+							ss.Availability[localID] = Confirmed
 
 						case updateState:
-							ss.updateState(newState, id)
-							ss.Availability[id] = Confirmed
+							ss.updateState(newState, localID)
+							ss.Availability[localID] = Confirmed
 						}
 
-					case ss.OriginID == id && pendingAction != noAction:
+					case ss.OriginID == localID && pendingAction != noAction:
 						pendingAction = noAction
 						idle = true
 
@@ -176,7 +176,7 @@ func Coordinator(
 
 				case ss.isEqual(arrivedSs):
 					ss = arrivedSs
-					ss.Availability[id] = Confirmed
+					ss.Availability[localID] = Confirmed
 					ss.setLostPeersUnavailable(peers)
 
 				default:

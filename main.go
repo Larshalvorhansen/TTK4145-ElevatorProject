@@ -20,61 +20,61 @@ func main() {
 	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
 
-	port := *serverPort
-	id := *elevatorId
+	localPort := *serverPort
+	localID := *elevatorId
 
-	hardware.Init("localhost:"+strconv.Itoa(port), config.NumFloors)
+	hardware.Init("localhost:"+strconv.Itoa(localPort), config.NumFloors)
 
-	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", id, port, config.NumFloors, config.NumElevators)
+	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", localID, localPort, config.NumFloors, config.NumElevators)
 
 	newOrderCh := make(chan elevator.Orders, config.BufferSize)
-	deliveredOrderCh := make(chan hardware.ButtonEvent, config.BufferSize)
-	newStateCh := make(chan elevator.State, config.BufferSize)
+	orderDeliveredCh := make(chan hardware.ButtonEvent, config.BufferSize)
+	localStateCh := make(chan elevator.State, config.BufferSize)
 	confirmedSharedStateCh := make(chan coordinator.SharedState, config.BufferSize)
-	networkTxCh := make(chan coordinator.SharedState, config.BufferSize)
-	networkRxCh := make(chan coordinator.SharedState, config.BufferSize)
-	peersRxCh := make(chan peers.PeerUpdate, config.BufferSize)
+	sharedStateTxCh := make(chan coordinator.SharedState, config.BufferSize)
+	sharedStateRxCh := make(chan coordinator.SharedState, config.BufferSize)
+	peerUpdateRxCh := make(chan peers.PeerUpdate, config.BufferSize)
 	peersTxCh := make(chan bool, config.BufferSize)
 
 	go peers.Receiver(
 		config.MessagePort,
-		peersRxCh,
+		peerUpdateRxCh,
 	)
 	go peers.Transmitter(
 		config.MessagePort,
-		id,
+		localID,
 		peersTxCh,
 	)
 
 	go bcast.Receiver(
 		config.MessagePort,
-		networkRxCh,
+		sharedStateRxCh,
 	)
 	go bcast.Transmitter(
 		config.MessagePort,
-		networkTxCh,
+		sharedStateTxCh,
 	)
 
 	go coordinator.Coordinator(
 		confirmedSharedStateCh,
-		deliveredOrderCh,
-		newStateCh,
-		networkTxCh,
-		networkRxCh,
-		peersRxCh,
-		id)
+		orderDeliveredCh,
+		localStateCh,
+		sharedStateTxCh,
+		sharedStateRxCh,
+		peerUpdateRxCh,
+		localID)
 
 	go elevator.Elevator(
 		newOrderCh,
-		deliveredOrderCh,
-		newStateCh,
-		id)
+		orderDeliveredCh,
+		localStateCh,
+		localID)
 
 	for {
 		select {
 		case ss := <-confirmedSharedStateCh:
-			newOrderCh <- assigner.DistributeElevatorOrders(ss, id)
-			lamp.SetLamps(ss, id)
+			newOrderCh <- assigner.DistributeElevatorOrders(ss, localID)
+			lamp.SetLamps(ss, localID)
 
 		default:
 			continue

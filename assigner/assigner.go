@@ -30,7 +30,7 @@ type HRAInput struct {
 	States       map[string]HRAElevState   `json:"states"`
 }
 
-func DistributeElevatorOrders(ss coordinator.SharedState, id int) elevator.Orders {
+func DistributeElevatorOrders(ss coordinator.SharedState, localID int) elevator.Orders {
 
 	hraExecutable := ""
 	switch runtime.GOOS {
@@ -85,5 +85,5 @@ func DistributeElevatorOrders(ss coordinator.SharedState, id int) elevator.Order
 		panic(fmt.Sprintf("json.Unmarshal error: %v", err))
 	}
 
-	return (*output)[strconv.Itoa(id)]
+	return (*output)[strconv.Itoa(localID)]
 }
