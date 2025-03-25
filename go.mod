@@ -1,3 +1,3 @@
-module Driver-go
+module elevator-project
 
 go 1.16

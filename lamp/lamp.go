@@ -1,9 +1,9 @@
 package lamp
 
 import (
-	"Driver-go/config"
-	"Driver-go/coordinator"
-	"Driver-go/hardware"
+	"elevator-project/config"
+	"elevator-project/coordinator"
+	"elevator-project/hardware"
 )
 
 func SetLamps(ss coordinator.SharedState, elevatorID int) {

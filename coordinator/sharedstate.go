@@ -1,10 +1,10 @@
 package coordinator
 
 import (
-	"Driver-go/config"
-	"Driver-go/elevator"
-	"Driver-go/hardware"
-	"Driver-go/network/peers"
+	"elevator-project/config"
+	"elevator-project/elevator"
+	"elevator-project/hardware"
+	"elevator-project/network/peers"
 	"reflect"
 )
 

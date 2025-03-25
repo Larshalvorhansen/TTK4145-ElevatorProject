@@ -5,9 +5,9 @@
 package assigner
 
 import (
-	"Driver-go/config"
-	"Driver-go/coordinator"
-	"Driver-go/elevator"
+	"elevator-project/config"
+	"elevator-project/coordinator"
+	"elevator-project/elevator"
 	"encoding/json"
 	"fmt"
 	"os/exec"

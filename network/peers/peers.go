@@ -1,8 +1,8 @@
 package peers
 
 import (
-	"Driver-go/config"
-	"Driver-go/network/conn"
+	"elevator-project/config"
+	"elevator-project/network/conn"
 	"fmt"
 	"net"
 	"sort"

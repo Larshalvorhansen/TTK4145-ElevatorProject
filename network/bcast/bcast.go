@@ -1,7 +1,7 @@
 package bcast
 
 import (
-	"Driver-go/network/conn"
+	"elevator-project/network/conn"
 	"encoding/json"
 	"fmt"
 	"net"

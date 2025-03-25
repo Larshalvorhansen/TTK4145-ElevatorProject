@@ -1,14 +1,14 @@
 package main
 
 import (
-	"Driver-go/assigner"
-	"Driver-go/config"
-	"Driver-go/coordinator"
-	"Driver-go/elevator"
-	"Driver-go/hardware"
-	"Driver-go/lamp"
-	"Driver-go/network/bcast"
-	"Driver-go/network/peers"
+	"elevator-project/assigner"
+	"elevator-project/config"
+	"elevator-project/coordinator"
+	"elevator-project/elevator"
+	"elevator-project/hardware"
+	"elevator-project/lamp"
+	"elevator-project/network/bcast"
+	"elevator-project/network/peers"
 	"flag"
 	"fmt"
 	"strconv"

@@ -1,7 +1,7 @@
 package hardware
 
 import (
-	"Driver-go/config"
+	"elevator-project/config"
 	"fmt"
 	"net"
 	"sync"
