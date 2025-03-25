@@ -7,20 +7,20 @@ import (
 
 type Orders [config.NumFloors][config.NumButtons]bool
 
-func (o Orders) OrderInDirection(floor int, dir Direction) bool {
+func (orders Orders) OrderInDirection(currentFloor int, direction Direction) bool {
 	var start, end int
-	switch dir {
+	switch direction {
 	case Up:
-		start, end = floor+1, config.NumFloors
+		start, end = currentFloor+1, config.NumFloors
 	case Down:
-		start, end = 0, floor
+		start, end = 0, currentFloor
 	default:
-		panic("Invalid direction")
+		panic("OrderInDirection: unknown elevator direction provided")
 	}
 
-	for f := start; f < end; f++ {
-		for b := 0; b < config.NumButtons; b++ {
-			if o[f][b] {
+	for floor := start; floor < end; floor++ {
+		for buttonType := 0; buttonType < config.NumButtons; buttonType++ {
+			if orders[floor][buttonType] {
 				return true
 			}
 		}
@@ -28,16 +28,16 @@ func (o Orders) OrderInDirection(floor int, dir Direction) bool {
 	return false
 }
 
-func SendOrderDone(
-	floor int,
-	dir Direction,
-	o Orders,
-	orderDoneCh chan<- hardware.ButtonEvent,
+func SendCompletedOrders(
+	currentFloor int,
+	direction Direction,
+	orders Orders,
+	orderDeliveredCh chan<- hardware.ButtonEvent,
 ) {
-	if o[floor][hardware.BT_Cab] {
-		orderDoneCh <- hardware.ButtonEvent{Floor: floor, Button: hardware.BT_Cab}
+	if orders[currentFloor][hardware.BT_Cab] {
+		orderDeliveredCh <- hardware.ButtonEvent{Floor: currentFloor, Button: hardware.BT_Cab}
 	}
-	if o[floor][dir] {
-		orderDoneCh <- hardware.ButtonEvent{Floor: floor, Button: dir.ToButtonType()}
+	if orders[currentFloor][direction] {
+		orderDeliveredCh <- hardware.ButtonEvent{Floor: currentFloor, Button: direction.ToButtonType()}
 	}
 }
