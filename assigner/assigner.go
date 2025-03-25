@@ -51,6 +51,8 @@ func AssignOrders(ss coordinator.SharedState, id int) elevator.Orders {
 	switch runtime.GOOS {
 	case "linux":
 		hraExecutable = "hall_request_assigner"
+	case "darwin":
+		hraExecutable = "hall_request_assigner_mac"
 	case "windows":
 		hraExecutable = "hall_request_assigner.exe"
 	default:
