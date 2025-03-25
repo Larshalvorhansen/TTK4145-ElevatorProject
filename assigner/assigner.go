@@ -30,7 +30,7 @@ type HRAInput struct {
 	States       map[string]HRAElevState   `json:"states"`
 }
 
-func AssignOrders(ss coordinator.SharedState, id int) elevator.Orders {
+func DistributeElevatorOrders(ss coordinator.SharedState, id int) elevator.Orders {
 
 	hraExecutable := ""
 	switch runtime.GOOS {

@@ -73,7 +73,7 @@ func main() {
 	for {
 		select {
 		case ss := <-confirmedSharedStateCh:
-			newOrderCh <- assigner.AssignOrders(ss, id)
+			newOrderCh <- assigner.DistributeElevatorOrders(ss, id)
 			lamp.SetLamps(ss, id)
 
 		default:
