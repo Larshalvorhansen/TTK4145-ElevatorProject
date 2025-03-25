@@ -1,3 +1,7 @@
+// The following implementation is based on the driver provided in TTK4145's project resources:
+// https://github.com/TTK4145/driver-go/blob/master/elevio/elevator_io.go
+// Modifications were made to adapt it to this project's architecture and requirements.
+
 package hardware
 
 import (
