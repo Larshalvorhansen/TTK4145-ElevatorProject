@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-type StashType int
+type pendingAction int
 
 const (
-	None StashType = iota
-	Add
-	Remove
-	State
+	noAction pendingAction = iota
+	addOrder
+	removeOrder
+	updateState
 )
 
 func Coordinator(
@@ -32,7 +32,7 @@ func Coordinator(
 
 	go hardware.PollButtons(newOrderCh)
 
-	var stashType StashType
+	var pendingAction pendingAction
 	var newOrder hardware.ButtonEvent
 	var deliveredOrder hardware.ButtonEvent
 	var newState elevator.State
@@ -66,21 +66,21 @@ func Coordinator(
 		case idle:
 			select {
 			case newOrder = <-newOrderCh:
-				stashType = Add
+				pendingAction = addOrder
 				ss.prepareNewState(id)
 				ss.addOrder(newOrder, id)
 				ss.Availability[id] = Confirmed
 				idle = false
 
 			case deliveredOrder = <-deliveredOrderCh:
-				stashType = Remove
+				pendingAction = removeOrder
 				ss.prepareNewState(id)
 				ss.removeOrder(deliveredOrder, id)
 				ss.Availability[id] = Confirmed
 				idle = false
 
 			case newState = <-newStateCh:
-				stashType = State
+				pendingAction = updateState
 				ss.prepareNewState(id)
 				ss.updateState(newState, id)
 				ss.Availability[id] = Confirmed
@@ -149,25 +149,25 @@ func Coordinator(
 					confirmedSsCh <- ss
 
 					switch {
-					case ss.OriginID != id && stashType != None:
+					case ss.OriginID != id && pendingAction != noAction:
 						ss.prepareNewState(id)
 
-						switch stashType {
-						case Add:
+						switch pendingAction {
+						case addOrder:
 							ss.addOrder(newOrder, id)
 							ss.Availability[id] = Confirmed
 
-						case Remove:
+						case removeOrder:
 							ss.removeOrder(deliveredOrder, id)
 							ss.Availability[id] = Confirmed
 
-						case State:
+						case updateState:
 							ss.updateState(newState, id)
 							ss.Availability[id] = Confirmed
 						}
 
-					case ss.OriginID == id && stashType != None:
-						stashType = None
+					case ss.OriginID == id && pendingAction != noAction:
+						pendingAction = noAction
 						idle = true
 
 					default:
