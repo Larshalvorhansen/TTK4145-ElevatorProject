@@ -48,12 +48,12 @@ func Coordinator(
 	for {
 		select {
 		case <-disconnectTimer.C:
-			ss.makeOthersUnavailable(id)
+			ss.setAllPeersUnavailableExcept(id)
 			fmt.Println("Lost connection to network")
 			offline = true
 
 		case peers = <-peersCh:
-			ss.makeOthersUnavailable(id)
+			ss.setAllPeersUnavailableExcept(id)
 			idle = false
 
 		case <-intervalTicker.C:
@@ -67,31 +67,31 @@ func Coordinator(
 			select {
 			case newOrder = <-newOrderCh:
 				stashType = Add
-				ss.prepNewSs(id)
+				ss.prepareNewState(id)
 				ss.addOrder(newOrder, id)
-				ss.Ackmap[id] = Acked
+				ss.Availability[id] = Confirmed
 				idle = false
 
 			case deliveredOrder = <-deliveredOrderCh:
 				stashType = Remove
-				ss.prepNewSs(id)
+				ss.prepareNewState(id)
 				ss.removeOrder(deliveredOrder, id)
-				ss.Ackmap[id] = Acked
+				ss.Availability[id] = Confirmed
 				idle = false
 
 			case newState = <-newStateCh:
 				stashType = State
-				ss.prepNewSs(id)
+				ss.prepareNewState(id)
 				ss.updateState(newState, id)
-				ss.Ackmap[id] = Acked
+				ss.Availability[id] = Confirmed
 				idle = false
 
 			case arrivedSs := <-networkRxCh:
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
-				if arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum) {
+				if arrivedSs.Version > ss.Version || (arrivedSs.OriginID > ss.OriginID && arrivedSs.Version == ss.Version) {
 					ss = arrivedSs
-					ss.makeLostPeersUnavailable(peers)
-					ss.Ackmap[id] = Acked
+					ss.setLostPeersUnavailable(peers)
+					ss.Availability[id] = Confirmed
 					idle = false
 				}
 
@@ -105,24 +105,24 @@ func Coordinator(
 					fmt.Println("Regained connection to network")
 					offline = false
 				} else {
-					ss.Ackmap[id] = NotAvailable
+					ss.Availability[id] = Unavailable
 				}
 
 			case newOrder := <-newOrderCh:
 				if !ss.States[id].State.Motorstatus {
-					ss.Ackmap[id] = Acked
+					ss.Availability[id] = Confirmed
 					ss.addCabCall(newOrder, id)
 					confirmedSsCh <- ss
 				}
 
 			case deliveredOrder := <-deliveredOrderCh:
-				ss.Ackmap[id] = Acked
+				ss.Availability[id] = Confirmed
 				ss.removeOrder(deliveredOrder, id)
 				confirmedSsCh <- ss
 
 			case newState := <-newStateCh:
 				if !(newState.Obstructed || newState.Motorstatus) {
-					ss.Ackmap[id] = Acked
+					ss.Availability[id] = Confirmed
 					ss.updateState(newState, id)
 					confirmedSsCh <- ss
 				}
@@ -133,40 +133,40 @@ func Coordinator(
 		case !idle:
 			select {
 			case arrivedSs := <-networkRxCh:
-				if arrivedSs.SeqNum < ss.SeqNum {
+				if arrivedSs.Version < ss.Version {
 					break
 				}
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
-				case arrivedSs.SeqNum > ss.SeqNum || (arrivedSs.Origin > ss.Origin && arrivedSs.SeqNum == ss.SeqNum):
+				case arrivedSs.Version > ss.Version || (arrivedSs.OriginID > ss.OriginID && arrivedSs.Version == ss.Version):
 					ss = arrivedSs
-					ss.Ackmap[id] = Acked
-					ss.makeLostPeersUnavailable(peers)
+					ss.Availability[id] = Confirmed
+					ss.setLostPeersUnavailable(peers)
 
-				case arrivedSs.fullyAcked(id):
+				case arrivedSs.isFullyConfirmed(id):
 					ss = arrivedSs
 					confirmedSsCh <- ss
 
 					switch {
-					case ss.Origin != id && stashType != None:
-						ss.prepNewSs(id)
+					case ss.OriginID != id && stashType != None:
+						ss.prepareNewState(id)
 
 						switch stashType {
 						case Add:
 							ss.addOrder(newOrder, id)
-							ss.Ackmap[id] = Acked
+							ss.Availability[id] = Confirmed
 
 						case Remove:
 							ss.removeOrder(deliveredOrder, id)
-							ss.Ackmap[id] = Acked
+							ss.Availability[id] = Confirmed
 
 						case State:
 							ss.updateState(newState, id)
-							ss.Ackmap[id] = Acked
+							ss.Availability[id] = Confirmed
 						}
 
-					case ss.Origin == id && stashType != None:
+					case ss.OriginID == id && stashType != None:
 						stashType = None
 						idle = true
 
@@ -174,10 +174,10 @@ func Coordinator(
 						idle = true
 					}
 
-				case ss.equals(arrivedSs):
+				case ss.isEqual(arrivedSs):
 					ss = arrivedSs
-					ss.Ackmap[id] = Acked
-					ss.makeLostPeersUnavailable(peers)
+					ss.Availability[id] = Confirmed
+					ss.setLostPeersUnavailable(peers)
 
 				default:
 				}

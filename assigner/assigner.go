@@ -47,7 +47,7 @@ func DistributeElevatorOrders(ss coordinator.SharedState, id int) elevator.Order
 	stateMap := make(map[string]HRAElevState)
 
 	for id, elev := range ss.States {
-		unavailable := ss.Ackmap[id] == coordinator.NotAvailable ||
+		unavailable := ss.Availability[id] == coordinator.Unavailable ||
 			elev.State.Motorstatus ||
 			elev.State.Obstructed // For single elevator use, comment out last two conditions
 

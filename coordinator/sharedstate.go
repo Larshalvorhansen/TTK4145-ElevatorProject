@@ -8,12 +8,12 @@ import (
 	"reflect"
 )
 
-type AckStatus int
+type ConfirmationStatus int
 
 const (
-	NotAcked AckStatus = iota
-	Acked
-	NotAvailable
+	Unconfirmed ConfirmationStatus = iota
+	Confirmed
+	Unavailable
 )
 
 type LocalState struct {
@@ -22,9 +22,9 @@ type LocalState struct {
 }
 
 type SharedState struct {
-	SeqNum       int
-	Origin       int
-	Ackmap       [config.NumElevators]AckStatus
+	Version      int
+	OriginID     int
+	Availability [config.NumElevators]ConfirmationStatus
 	HallRequests [config.NumFloors][2]bool
 	States       [config.NumElevators]LocalState
 }
@@ -58,44 +58,44 @@ func (ss *SharedState) updateState(newState elevator.State, id int) {
 	}
 }
 
-func (ss *SharedState) fullyAcked(id int) bool {
-	if ss.Ackmap[id] == NotAvailable {
+func (ss *SharedState) isFullyConfirmed(id int) bool {
+	if ss.Availability[id] == Unavailable {
 		return false
 	}
-	for index := range ss.Ackmap {
-		if ss.Ackmap[index] == NotAcked {
+	for index := range ss.Availability {
+		if ss.Availability[index] == Unconfirmed {
 			return false
 		}
 	}
 	return true
 }
 
-func (oldSs SharedState) equals(newSs SharedState) bool {
-	oldSs.Ackmap = [config.NumElevators]AckStatus{}
-	newSs.Ackmap = [config.NumElevators]AckStatus{}
+func (oldSs SharedState) isEqual(newSs SharedState) bool {
+	oldSs.Availability = [config.NumElevators]ConfirmationStatus{}
+	newSs.Availability = [config.NumElevators]ConfirmationStatus{}
 	return reflect.DeepEqual(oldSs, newSs)
 }
 
-func (ss *SharedState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
+func (ss *SharedState) setLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, id := range peers.Lost {
-		ss.Ackmap[id] = NotAvailable
+		ss.Availability[id] = Unavailable
 	}
 }
 
-func (ss *SharedState) makeOthersUnavailable(id int) {
-	for elev := range ss.Ackmap {
+func (ss *SharedState) setAllPeersUnavailableExcept(id int) {
+	for elev := range ss.Availability {
 		if elev != id {
-			ss.Ackmap[elev] = NotAvailable
+			ss.Availability[elev] = Unavailable
 		}
 	}
 }
 
-func (ss *SharedState) prepNewSs(id int) {
-	ss.SeqNum++
-	ss.Origin = id
-	for id := range ss.Ackmap {
-		if ss.Ackmap[id] == Acked {
-			ss.Ackmap[id] = NotAcked
+func (ss *SharedState) prepareNewState(id int) {
+	ss.Version++
+	ss.OriginID = id
+	for id := range ss.Availability {
+		if ss.Availability[id] == Confirmed {
+			ss.Availability[id] = Unconfirmed
 		}
 	}
 }
