@@ -2,6 +2,7 @@
 // https://github.com/TTK4145/Project-resources/blob/master/cost_fns/usage_examples/example.go
 // Modifications were made to integrate it into the current project's codebase and requirements.
 
+// TODO: change this coordinator.Unavailable || elev.State.Motorstatus || elev.State.Obstructed to the correct one
 package assigner
 
 import (
@@ -47,9 +48,8 @@ func DistributeElevatorOrders(ss coordinator.SharedState, id int) elevator.Order
 	stateMap := make(map[string]HRAElevState)
 
 	for id, elev := range ss.States {
-		unavailable := ss.Availability[id] == coordinator.Unavailable ||
-			elev.State.Motorstatus ||
-			elev.State.Obstructed // For single elevator use, comment out last two conditions
+		// For single elevator use, comment out all conditions except for the first one
+		unavailable := ss.Availability[id] == coordinator.Unavailable || elev.State.Motorstatus || (elev.State.Obstructed && elev.State.Behaviour == elevator.DoorOpen)
 
 		if unavailable {
 			continue
