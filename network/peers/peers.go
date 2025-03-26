@@ -37,14 +37,17 @@ func Transmitter(port int, id int, transmitEnable <-chan bool) {
 func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 
 	var buf [1024]byte
-	var p PeerUpdate
+
 	lastSeen := make(map[int]time.Time)
-	p.Lost = make([]int, 0)
 
 	conn := conn.DialBroadcastUDP(port)
 
 	for {
 		updated := false
+		p := PeerUpdate{
+			New:  -1,
+			Lost: make([]int, 0),
+		}
 
 		conn.SetReadDeadline(time.Now().Add(config.PeerBcastInterval))
 		n, _, _ := conn.ReadFrom(buf[0:])
@@ -55,29 +58,23 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 			continue
 		}
 
-		p.New = 1000
+		// Adding new connection
 		if _, idExists := lastSeen[id]; !idExists {
 			p.New = id
 			updated = true
-
-			for i, lostPeer := range p.Lost {
-				if lostPeer == id {
-					p.Lost = append(p.Lost[:i], p.Lost[i+1:]...)
-					break
-				}
-			}
 		}
-
 		lastSeen[id] = time.Now()
 
+		// Removing dead connections
 		for k, v := range lastSeen {
-			if time.Now().Sub(v) > config.DisconnectTime {
+			if time.Since(v) > config.DisconnectTime {
 				updated = true
 				p.Lost = append(p.Lost, k)
 				delete(lastSeen, k)
 			}
 		}
 
+		// Sending update
 		if updated {
 			p.Peers = make([]int, 0, len(lastSeen))
 
