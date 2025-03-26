@@ -2,6 +2,8 @@
 // https://github.com/TTK4145/driver-go/blob/master/elevio/elevator_io.go
 // Modifications were made to adapt it to this project's architecture and requirements.
 
+//TODO: Chech if the commented out functions are needed or not. If not, remove them.
+
 package hardware
 
 import (
@@ -12,10 +14,9 @@ import (
 	"time"
 )
 
-var _initialized bool = false
-var _numFloors int = 4
-var _mtx sync.Mutex
-var _conn net.Conn
+var initialized bool = false
+var mtx sync.Mutex
+var conn net.Conn
 
 type MotorDirection int
 
@@ -38,19 +39,18 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
-func Init(addr string, numFloors int) {
-	if _initialized {
+func Init(addr string) {
+	if initialized {
 		fmt.Println("Driver already initialized!")
 		return
 	}
-	_numFloors = numFloors
-	_mtx = sync.Mutex{}
+	mtx = sync.Mutex{}
 	var err error
-	_conn, err = net.Dial("tcp", addr)
+	conn, err = net.Dial("tcp", addr)
 	if err != nil {
 		panic(err.Error())
 	}
-	_initialized = true
+	initialized = true
 }
 
 func SetMotorDirection(dir MotorDirection) {
@@ -74,10 +74,10 @@ func SetDoorOpenLamp(value bool) {
 // }
 
 func PollButtons(receiver chan<- ButtonEvent) {
-	prev := make([][3]bool, _numFloors)
+	prev := make([][3]bool, config.NumFloors)
 	for {
 		time.Sleep(config.HardwarePollRate)
-		for f := 0; f < _numFloors; f++ {
+		for f := 0; f < config.NumFloors; f++ {
 			for b := ButtonType(0); b < 3; b++ {
 				v := GetButton(b, f)
 				if v != prev[f][b] && v != false {
@@ -150,16 +150,16 @@ func GetObstruction() bool {
 }
 
 func read(in [4]byte) [4]byte {
-	_mtx.Lock()
-	defer _mtx.Unlock()
+	mtx.Lock()
+	defer mtx.Unlock()
 
-	_, err := _conn.Write(in[:])
+	_, err := conn.Write(in[:])
 	if err != nil {
 		panic("Lost connection to Elevator Server")
 	}
 
 	var out [4]byte
-	_, err = _conn.Read(out[:])
+	_, err = conn.Read(out[:])
 	if err != nil {
 		panic("Lost connection to Elevator Server")
 	}
@@ -168,10 +168,10 @@ func read(in [4]byte) [4]byte {
 }
 
 func write(in [4]byte) {
-	_mtx.Lock()
-	defer _mtx.Unlock()
+	mtx.Lock()
+	defer mtx.Unlock()
 
-	_, err := _conn.Write(in[:])
+	_, err := conn.Write(in[:])
 	if err != nil {
 		panic("Lost connection to Elevator Server")
 	}

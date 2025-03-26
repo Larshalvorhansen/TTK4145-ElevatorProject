@@ -23,7 +23,7 @@ func main() {
 	localPort := *serverPort
 	localID := *elevatorId
 
-	hardware.Init("localhost:"+strconv.Itoa(localPort), config.NumFloors)
+	hardware.Init("localhost:" + strconv.Itoa(localPort))
 
 	fmt.Printf("Elevator system started successfully!\n  Elevator Details:\n\tID:   %d\n\tPort: %d\n  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n", localID, localPort, config.NumFloors, config.NumElevators)
 

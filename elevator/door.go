@@ -19,40 +19,20 @@ func DoorLogic(
 	doorOpenCh <-chan bool,
 	obstructedCh chan<- bool,
 ) {
-	obstruction := false
-	doorState := Closed
 	hardware.SetDoorOpenLamp(false)
 
 	obstructionCh := make(chan bool)
 	go hardware.PollObstructionSwitch(obstructionCh)
 
-	doorOpenTimer := time.NewTimer(time.Hour)
-	doorOpenTimer.Stop()
+	// Init state
+	obstruction := false
+	doorState := Closed
+
+	timeCounter := time.NewTimer(time.Hour)
+	timeCounter.Stop()
 
 	for {
 		select {
-
-		// ------------------------------------- Door is open -------------------------------------
-		case <-doorOpenCh:
-			if obstruction {
-				obstructedCh <- true
-			}
-			switch doorState {
-			case Closed:
-				hardware.SetDoorOpenLamp(true)
-				doorOpenTimer = time.NewTimer(config.DoorOpenDuration)
-				doorState = InCountDown
-			case InCountDown:
-				doorOpenTimer = time.NewTimer(config.DoorOpenDuration)
-
-			case Obstructed:
-				doorOpenTimer = time.NewTimer(config.DoorOpenDuration)
-				doorState = InCountDown
-			default:
-				panic("Unexpected elevator state in DoorLogic: state transition not implemented")
-			}
-
-		// ------------------------------ Obstruction switch pressed ------------------------------
 		case obstruction = <-obstructionCh:
 			if !obstruction && doorState == Obstructed {
 				hardware.SetDoorOpenLamp(false)
@@ -65,10 +45,27 @@ func DoorLogic(
 				obstructedCh <- false
 			}
 
-		// -------------------------------- Door open timer expires -------------------------------
-		case <-doorOpenTimer.C:
+		case <-doorOpenCh:
+			if obstruction {
+				obstructedCh <- true
+			}
+			switch doorState {
+			case Closed:
+				hardware.SetDoorOpenLamp(true)
+				timeCounter = time.NewTimer(config.DoorOpenDuration)
+				doorState = InCountDown
+			case InCountDown:
+				timeCounter = time.NewTimer(config.DoorOpenDuration)
+
+			case Obstructed:
+				timeCounter = time.NewTimer(config.DoorOpenDuration)
+				doorState = InCountDown
+			default:
+				panic("DoorLogic state not implemented")
+			}
+		case <-timeCounter.C:
 			if doorState != InCountDown {
-				panic("Unexpected elevator state in DoorLogic: state transition not implemented")
+				panic("DoorLogic state not implemented")
 			}
 			if obstruction {
 				doorState = Obstructed
