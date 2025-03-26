@@ -1,4 +1,4 @@
-# TODO: maybe change the name from run.sh to start.sh or something like that
+# This script was implemented with significant help from ChatGPT (OpenAI).
 
 if [ -z "$1" ]; then
     echo -e "\nEnter elevator ID (default 0):"
@@ -36,6 +36,6 @@ while true; do
     echo -e "\nProgram crashed or terminal closed. Restarting in a new window...\n"
     sleep 1 
     
-    gnome-terminal -- bash -c "cd $(pwd); ./run.sh $ID $PORT; exec bash"
+    gnome-terminal -- bash -c "cd $(pwd); ./launch.sh $ID $PORT; exec bash"
     exit 
 done
