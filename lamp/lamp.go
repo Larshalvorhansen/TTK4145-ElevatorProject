@@ -1,3 +1,5 @@
+// TODO: Change SetLamps to SetRequestLamps??
+
 package lamp
 
 import (
