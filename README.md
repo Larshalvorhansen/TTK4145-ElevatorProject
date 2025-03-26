@@ -1,73 +1,96 @@
-# TTK4145-ElevatorProject
+# Elevator Project – Group 15
 
-This is the repo for the elevator project, group 15
+This is a distributed elevator control system developed as part of the project in TTK4145 Real-Time Programming.
 
-The project aims to implement an elevator control system in Go using a **peer-to-peer** system with UDP broadcasting for communication, which should be able to control 3 elevators over 4 floors in a reasonable way according to the given specification. The system consists of several modules which handles different functionalities of the system, ranging from communication between elevators to assigning hallorders to different elevators or turing on/off lights. Below is a desciption of each module:
+The project description can be found [here](https://github.com/TTK4145/Project).
 
-## Modules
+## Table of Contents
 
-### **elevator**
-Handles the core functionality of the elevator, including movement, door control, order handling, lamp handling, and finite state machine (FSM) logic.
+- [Overview](#overview)
+- [How to run](#how-to-run)
+- [Module Structure](#module-structure)
+- [Credits](#credits)
 
-### **elevio**
-TTK4145 developed this network module, which you can access [here](https://github.com/TTK4145/driver-go). It provides an interface for interacting with the elevator hardware.
-Although we have made minor adjustments to the code to fit our project, it remains largely unchanged.
+## Overview
 
+This system is designed to coordinate multiple elevators in a networked environment. Its core responsibilities include:
 
-### **assigner**
-Assigns the hall requests to different elevators based on an algorithm using the provided example code in project resources which is accesible [here](https://github.com/TTK4145/Project-resources/tree/master/cost_fns). Should have a main function that takes the elevatorstates and hallrequests as input and outputs which request are assigned to which elevators.
+- Distributing hall requests efficiently using a cost-based assignment strategy.
+- Keeping all elevator processes synchronized through peer-to-peer UDP broadcasting.
+- Detecting disconnected or crashed peers and adjusting state accordingly.
+- Allowing elevators to continue operating locally in the absence of network communication.
 
-### **sharedstate**
-Is far from finished, but should create a struct which keeps track of the state of the whole system (all elevators and orders), as well as making sure all elevators have a syncronized worldview. This also includes functions to manange the sharedstate-struct. A final-state-machine should be implented in order to use this sharedstate in a logical way, so that it is in fact syncronized.
+Each elevator node maintains a shared view of the system state, enabling coordinated behavior without relying on a central server.
 
-### **network**
-TTK4145 developed this network module, which you can access [here](https://github.com/TTK4145/Network-go). 
-Although we have made some minor modifications, the module is mostly unchanged.
+## How to Run
+Before running the program, ensure that the parameters in `config/config.go` are set to the required values. Update them if necessary.
 
-### **config**
-Stores configuration parameters that several modules use, e.g. number of floors.
+### Linux (Recommended)
 
-| Sjekkliste                                                                                       | ja/nei  |
-| ------------------------------------------------------------------------------------------------ | ------- |
-| Hall-knappen lyser når trykket på                                                                | ja      |
-| Heis ankommer etasje-id=${ELEVATOR_ID}n etter hall-knapp er trykket                                                | ja |
-| Cab-knappen lyser når trykket på                                                                 | ja |
-| Heis tar imot cab-kall og kjører til riktig etasje                                               | ja |
-| Heis mister ikke noen kall (hall eller cab)                                                      | ja |
-| Heis fortsetter å fungere ved nettverksbrudd                                                     | kanskje |
-| Heis fortsetter å fungere ved strømbrudd                                                         | ja |
-| Heis fullfører cab-kall etter strøm/nettverk kommer tilbake                                      | ja |
-| Heis håndterer feil innen noen sekunder (ikke minutter)                                          | kankskje |
-| Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | nei? |
-| Heis tar fortsatt nye cab-kall ved nettverksbrudd                                                | usikker |
-| Heis trenger ikke manuell restart etter strøm/nettverk går tilbake                               | nei |
-| Hall-knapper på forskjellige arbeidsstasjoner viser samme lys under normale forhold              | ja |
-| Minst én hall-knapp viser riktig lys ved pakketap                                                | ja |
-| Cab-knappelysene er ikke delt mellom heiser                                                      | kanskje |
-| Knappelys skrur seg på raskt etter trykk                                                         | kanskje |
-| Knappelys skrur seg av når kallet er utført                                                      | kanskje |
-| Døren åpner seg når heisen stopper på etasjen                                                    | kanskje |
-| “Dør åpen”-lampen er tent når døren er åpen                                                      | kanskje |
-| Døren lukker seg ikke mens heisen beveger seg                                                    | kanskje |
-| Døren holder seg åpen i 3 sekunder på etasjen                                                    | kanskje |
-| Døren lukker seg ikke hvis en hindring er til stede                                              | kanskje |
-| Heisen stopper ikke på hver etasje unødvendig                                                    | ja |
-| Hall-knappelyset slukker når heis ankommer riktig retning                                        | kanskje |
-| Heisen skifter ikke retning unødvendig                                                           | kanskje |
-| Heisen annonserer retning korrekt (opp/ned)                                                      | kanskje |
-| Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
+Use the provided `start.sh` script to build and start the elevator program interactively:
+1. Make the script executable (only needed once):
+    ```bash
+    chmod +x start.sh
+    ```
+2. Start the program:
+    ```bash
+    ./start.sh
+    ```
 
-minitest
-
-
-### Build and Run
-*Note: The ID must be in the range 0 to NElevators-1.*
+### Manual Start / Other Operating Systems
+Running the program:
 ```bash
-chmod +x run.sh
-./run.sh <ID> 
+go run main.go
 ```
-### Terminate Terminal
+Runs the program with default values on ID (0) and port (15657)
 
+For changing ID and Port run:
 ```bash
-pkill -f run.sh
+go run main.go -id=0 -port=15657
 ```
+
+## Module Structure
+
+This system consists of several modules, each responsible for specific functionality:
+
+### `start.sh`
+Shell script for building and launching the elevator program.  
+Prompts for elevator ID and port, and restarts the program automatically if it crashes.
+
+### `main.go`
+Entry point of the program. Initializes all channels and modules, and connects the main control loop.
+
+### `assigner/`
+Implements the logic for assigning hall orders to elevators based on a cost function.  
+Determines which elevator is best suited to handle each request.
+
+### `config/`
+Defines system-wide constants such as the number of floors, number of elevators, channel buffer sizes, and timing configurations.
+
+### `coordinator/`
+Maintains and synchronizes the shared system state across all active elevators.  
+Implements the core state machine for coordinating elevator actions and handling peer communication.
+
+### `elevator/`
+Handles local elevator behavior and state.  
+Controls door logic, motor direction, floor tracking, and manages the elevator’s internal state machine.
+
+### `hardware/`
+Provides an interface to the elevator simulator.  
+Includes functions for motor control, button polling, floor sensors, and lamp updates.
+
+### `lamp/`
+Manages the visual indicators such as button lamps and floor indicators.  
+Updates are based on the current shared system state.
+
+### `network/`
+Handles UDP-based peer-to-peer communication:
+- `bcast/`: Encodes and broadcasts typed JSON messages
+- `conn/`: Initializes and manages UDP sockets across platforms
+- `localip/`: Retrieves the IP address of the current machine
+- `peers/`: Tracks active peers, handles peer discovery and loss detection
+
+## Credits
+
+This project contains code based on example code and resources from the [TTK4145 Real-Time Programming course](https://github.com/TTK4145).  
+Files that include adapted example code, or from ChatGPT (OpenAI), are marked either with a README or with comments at the top, indicating the source of the original code and describing any modifications made.

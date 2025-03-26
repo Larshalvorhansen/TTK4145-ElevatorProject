@@ -36,6 +36,6 @@ while true; do
     echo -e "\nProgram crashed or terminal closed. Restarting in a new window...\n"
     sleep 1 
     
-    gnome-terminal -- bash -c "cd $(pwd); ./boot.sh $ID $PORT; exec bash"
+    gnome-terminal -- bash -c "cd $(pwd); ./start.sh $ID $PORT; exec bash"
     exit 
 done
