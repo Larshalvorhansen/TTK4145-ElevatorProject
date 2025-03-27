@@ -1,3 +1,5 @@
+// TODO: Change the name SharedStateBcastInterval to something shorter
+
 package config
 
 import (

@@ -1,4 +1,5 @@
 // TODO: Maybe add documentation here? Check prints and panics
+// TODO: Maybe make functions and add them in elevatorstate like in coordinator for better readability?
 
 package elevator
 
