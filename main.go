@@ -1,5 +1,3 @@
-// TODO: Check comment in main loop
-
 package main
 
 import (
@@ -18,7 +16,6 @@ import (
 
 func main() {
 
-	// ------------------------------ Parse command-line flags -------------------------------
 	serverPort := flag.Int("port", 15657, "Elevator server port (default: 15657)")
 	elevatorId := flag.Int("id", 0, "Elevator ID (default: 0)")
 	flag.Parse()
@@ -26,7 +23,6 @@ func main() {
 	localPort := *serverPort
 	localID := *elevatorId
 
-	// --------------------------------- Initialize hardware ---------------------------------
 	hardware.Init("localhost:" + strconv.Itoa(localPort))
 	fmt.Printf(
 		"Elevator system started successfully!\n"+
@@ -34,7 +30,6 @@ func main() {
 			"  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n",
 		localID, localPort, config.NumFloors, config.NumElevators)
 
-	// --------------------------------- Initialize channels ---------------------------------
 	newOrderCh := make(chan elevator.Orders, config.BufferSize)
 	orderDeliveredCh := make(chan hardware.ButtonEvent, config.BufferSize)
 	localStateCh := make(chan elevator.State, config.BufferSize)
@@ -45,13 +40,11 @@ func main() {
 	peerUpdateRxCh := make(chan peers.PeerUpdate, config.BufferSize)
 	peerEnableTxCh := make(chan bool, config.BufferSize)
 
-	// ---------------------------- Initialize peers and network -----------------------------
 	go peers.Receiver(config.MessagePort, peerUpdateRxCh)
 	go peers.Transmitter(config.MessagePort, localID, peerEnableTxCh)
 	go bcast.Receiver(config.MessagePort, sharedStateRxCh)
 	go bcast.Transmitter(config.MessagePort, sharedStateTxCh)
 
-	// ------------------------------ Initialize elevator logic ------------------------------
 	go elevator.Elevator(
 		newOrderCh,
 		orderDeliveredCh,
@@ -67,7 +60,6 @@ func main() {
 		peerUpdateRxCh,
 		localID)
 
-	// -------------------------------------- Main loop --------------------------------------
 	for {
 		select {
 		case confirmedSharedState := <-confirmedSharedStateCh:
@@ -75,7 +67,7 @@ func main() {
 			lamp.SetLamps(confirmedSharedState, localID)
 
 		default:
-			continue // Check if we need this
+			continue
 		}
 	}
 }
