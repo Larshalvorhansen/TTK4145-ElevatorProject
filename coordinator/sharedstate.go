@@ -1,4 +1,5 @@
 // TODO: Check if deliveredOrder is a good name for the variable. Also check is "else" is needed, check this for all files
+// Check also if the logical order of the types is correct
 
 package coordinator
 
