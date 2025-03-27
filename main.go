@@ -31,9 +31,9 @@ func main() {
 			"  System Configuration:\n\tFloors:    %d\n\tElevators: %d\n\n",
 		localID, localPort, config.NumFloors, config.NumElevators)
 
+	localStateCh := make(chan elevator.State, config.BufferSize)
 	newOrderCh := make(chan elevator.Orders, config.BufferSize)
 	orderDeliveredCh := make(chan hardware.ButtonEvent, config.BufferSize)
-	localStateCh := make(chan elevator.State, config.BufferSize)
 
 	confirmedSharedStateCh := make(chan coordinator.SharedState, config.BufferSize)
 	sharedStateTxCh := make(chan coordinator.SharedState, config.BufferSize)
@@ -47,19 +47,19 @@ func main() {
 	go peers.Transmitter(config.MessagePort, localID, peerEnableTxCh)
 
 	go elevator.Elevator(
-		newOrderCh,
-		orderDeliveredCh,
+		localID,
 		localStateCh,
-		localID)
+		newOrderCh,
+		orderDeliveredCh)
 
 	go coordinator.Coordinator(
-		confirmedSharedStateCh,
-		orderDeliveredCh,
+		localID,
 		localStateCh,
+		orderDeliveredCh,
+		confirmedSharedStateCh,
 		sharedStateTxCh,
 		sharedStateRxCh,
-		peerUpdateRxCh,
-		localID)
+		peerUpdateRxCh)
 
 	for {
 		select {

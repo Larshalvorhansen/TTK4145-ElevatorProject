@@ -11,10 +11,10 @@ import (
 )
 
 func Elevator(
+	localID int,
+	localStateCh chan<- State,
 	newOrderCh <-chan Orders,
 	orderDeliveredCh chan<- hardware.ButtonEvent,
-	localStateCh chan<- State,
-	localID int,
 ) {
 	doorOpenCh := make(chan bool, config.ElevatorChBuffer)
 	doorClosedCh := make(chan bool, config.ElevatorChBuffer)

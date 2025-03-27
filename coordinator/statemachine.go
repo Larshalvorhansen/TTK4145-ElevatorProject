@@ -1,4 +1,4 @@
-// TODO: Maybe add some documentation here?
+// TODO: Check if the new code works before deleting commented out code
 
 package coordinator
 
@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+// Stores the local action that triggered a new SharedState version,
+// so it can be reapplied if the current node was not the origin of the final confirmed state.
 type pendingAction int
 
 const (
@@ -21,28 +23,31 @@ const (
 )
 
 func Coordinator(
-	confirmedSharedStateCh chan<- SharedState,
-	orderDeliveredCh <-chan hardware.ButtonEvent,
+	localID int,
 	localStateCh <-chan elevator.State,
+	orderDeliveredCh <-chan hardware.ButtonEvent,
+	confirmedSharedStateCh chan<- SharedState,
 	sharedStateTxCh chan<- SharedState,
 	sharedStateRxCh <-chan SharedState,
 	peerUpdateRxCh <-chan peers.PeerUpdate,
-	localID int,
+
 ) {
 
 	newOrderCh := make(chan hardware.ButtonEvent, config.BufferSize)
 
 	go hardware.PollButtons(newOrderCh)
 
-	var pendingAction pendingAction
-	var newOrder hardware.ButtonEvent
-	var deliveredOrder hardware.ButtonEvent
-	var newState elevator.State
-	var peers peers.PeerUpdate
-	var ss SharedState
-
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
 	sharedStateTicker := time.NewTicker(config.SSBcastInterval)
+
+	var (
+		ss             SharedState
+		pendingAction  pendingAction
+		newOrder       hardware.ButtonEvent
+		deliveredOrder hardware.ButtonEvent
+		newState       elevator.State
+		peers          peers.PeerUpdate
+	)
 
 	idle := true
 	offline := false
@@ -89,13 +94,29 @@ func Coordinator(
 				idle = false
 
 			case receivedSharedState := <-sharedStateRxCh:
-				disconnectTimer = time.NewTimer(config.DisconnectTime)
-				if receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version) {
+				if !disconnectTimer.Stop() {
+					select {
+					case <-disconnectTimer.C:
+					default:
+					}
+				}
+				disconnectTimer.Reset(config.DisconnectTime)
+
+				if receivedSharedState.Version > ss.Version ||
+					(receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version) {
 					ss = receivedSharedState
 					ss.setLostPeersUnavailable(peers)
 					ss.confirm(localID)
 					idle = false
 				}
+				// case receivedSharedState := <-sharedStateRxCh:
+			// 	disconnectTimer = time.NewTimer(config.DisconnectTime)
+			// 	if receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version) {
+			// 		ss = receivedSharedState
+			// 		ss.setLostPeersUnavailable(peers)
+			// 		ss.confirm(localID)
+			// 		idle = false
+			// 	}
 
 			default:
 			}
@@ -138,7 +159,14 @@ func Coordinator(
 				if receivedSharedState.Version < ss.Version {
 					break
 				}
-				disconnectTimer = time.NewTimer(config.DisconnectTime)
+				if !disconnectTimer.Stop() {
+					select {
+					case <-disconnectTimer.C:
+					default:
+					}
+				}
+				disconnectTimer.Reset(config.DisconnectTime)
+				// disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
 				case receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version):
