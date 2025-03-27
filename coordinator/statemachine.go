@@ -132,7 +132,7 @@ func Coordinator(
 				}
 
 			case newOrder := <-newOrderCh:
-				if !ss.States[localID].State.Motorstatus {
+				if !ss.States[localID].State.MotorPowerLost {
 					ss.confirm(localID)
 					ss.addCabOrder(newOrder, localID)
 					confirmedSharedStateCh <- ss
@@ -144,7 +144,7 @@ func Coordinator(
 				confirmedSharedStateCh <- ss
 
 			case newState := <-localStateCh:
-				if !(newState.Obstructed || newState.Motorstatus) {
+				if !(newState.Obstructed || newState.MotorPowerLost) {
 					ss.confirm(localID)
 					ss.updateState(newState, localID)
 					confirmedSharedStateCh <- ss

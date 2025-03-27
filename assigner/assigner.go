@@ -48,7 +48,7 @@ func AssignOrders(ss coordinator.SharedState, localID int) elevator.Orders {
 
 	for id, elev := range ss.States {
 		isUnavailable := ss.Availability[id] == coordinator.Unavailable
-		hasMotorIssue := elev.State.Motorstatus
+		hasMotorIssue := elev.State.MotorPowerLost
 		hasBlockingObstruction := elev.State.Obstructed && elev.State.Behaviour == elevator.DoorOpen
 
 		// For single elevator use, comment out the two last conditions

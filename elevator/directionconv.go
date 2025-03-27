@@ -2,7 +2,6 @@ package elevator
 
 import (
 	"elevator-project/hardware"
-	"fmt"
 )
 
 type Direction int
@@ -19,17 +18,19 @@ func (d Direction) ToString() string {
 	case Down:
 		return "down"
 	default:
-		fmt.Println("Warning: Invalid direction in ToString(), returning 'unknown'")
-		return "unknown"
+		panic("Invalid Direction in ToString()")
 	}
 }
 
 func (d Direction) FlipDirection() Direction {
-	if d != Up && d != Down {
-		fmt.Println("Warning: Invalid direction in Opposite(), returning Up as default")
+	switch d {
+	case Up:
+		return Down
+	case Down:
 		return Up
+	default:
+		panic("Invalid Direction in FlipDirection()")
 	}
-	return Direction(1 - d)
 }
 
 func (d Direction) ToMotorDirection() hardware.MotorDirection {
@@ -39,8 +40,7 @@ func (d Direction) ToMotorDirection() hardware.MotorDirection {
 	case Down:
 		return hardware.MD_Down
 	default:
-		fmt.Println("Warning: Invalid direction in ToMotorDirection(), returning MD_Stop")
-		return hardware.MD_Stop
+		panic("Invalid Direction in ToMotorDirection()")
 	}
 }
 
@@ -51,7 +51,6 @@ func (d Direction) ToButtonType() hardware.ButtonType {
 	case Down:
 		return hardware.BT_HallDown
 	default:
-		fmt.Println("Warning: Invalid direction in ToButtonType(), returning invalid value")
-		return -1 // Invalid ButtonType
+		panic("Invalid Direction in ToButtonType()")
 	}
 }

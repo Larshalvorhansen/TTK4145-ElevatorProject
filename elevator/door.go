@@ -26,7 +26,6 @@ func DoorLogic(
 	obstructionCh := make(chan bool)
 	go hardware.PollObstructionSwitch(obstructionCh)
 
-	// Init state
 	obstruction := false
 	doorState := Closed
 
@@ -35,18 +34,6 @@ func DoorLogic(
 
 	for {
 		select {
-		case obstruction = <-obstructionCh:
-			if !obstruction && doorState == Obstructed {
-				hardware.SetDoorOpenLamp(false)
-				doorClosedCh <- true
-				doorState = Closed
-			}
-			if obstruction {
-				obstructedCh <- true
-			} else {
-				obstructedCh <- false
-			}
-
 		case <-doorOpenCh:
 			if obstruction {
 				obstructedCh <- true
@@ -63,11 +50,20 @@ func DoorLogic(
 				timeCounter = time.NewTimer(config.DoorOpenDuration)
 				doorState = InCountDown
 			default:
-				panic("DoorLogic state not implemented")
+				panic("Unknown door state on doorOpen event")
 			}
+
+		case obstruction = <-obstructionCh:
+			obstructedCh <- obstruction
+			if !obstruction && doorState == Obstructed {
+				hardware.SetDoorOpenLamp(false)
+				doorClosedCh <- true
+				doorState = Closed
+			}
+
 		case <-timeCounter.C:
 			if doorState != InCountDown {
-				panic("DoorLogic state not implemented")
+				panic("Timer expired in unexpected door state")
 			}
 			if obstruction {
 				doorState = Obstructed
