@@ -1,4 +1,4 @@
-// TODO: Change func DistributeElevatorOrders to AssignOrders or Assigner (like in coordinator is called Coordinator)?
+// TODO: Change func DistributeElevatorOrders to AssignOrders or Assigner (like in coordinator is called Coordinator)? Change elev to elevator?
 
 // The following implementation is based on the example provided by TTK4145's project resources:
 // https://github.com/TTK4145/Project-resources/blob/master/cost_fns/usage_examples/example.go
