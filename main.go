@@ -1,5 +1,3 @@
-// TODO: Check comment in main loop
-
 package main
 
 import (
@@ -62,20 +60,8 @@ func main() {
 		peerUpdateRxCh)
 
 	for {
-		select {
-		case confirmedSharedState := <-confirmedSharedStateCh:
-			newOrderCh <- assigner.AssignOrders(confirmedSharedState, localID)
-			lamp.SetRequestLamps(confirmedSharedState, localID)
-
-		default:
-			continue // Check if we need this. The commented out code under could be a replacement.
-		}
+		confirmedSharedState := <-confirmedSharedStateCh
+		newOrderCh <- assigner.AssignOrders(confirmedSharedState, localID)
+		lamp.SetRequestLamps(confirmedSharedState, localID)
 	}
-
-	// This could be used, but do not know if it works
-	// for {
-	// 	confirmedSharedState := <-confirmedSharedStateCh
-	// 	newOrderCh <- assigner.AssignOrders(confirmedSharedState, localID)
-	// 	lamp.SetRequestLamps(confirmedSharedState, localID)
-	// }
 }
