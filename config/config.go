@@ -16,8 +16,8 @@ const (
 
 	DisconnectTime    = 1 * time.Second
 	DoorOpenDuration  = 3 * time.Second
-	WatchdogTime      = 4 * time.Second
 	PeerBcastInterval = 15 * time.Millisecond
 	SSBcastInterval   = 15 * time.Millisecond
 	HardwarePollRate  = 20 * time.Millisecond
+	WatchdogTime      = 3500 * time.Millisecond
 )
