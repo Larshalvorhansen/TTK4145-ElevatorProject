@@ -1,4 +1,4 @@
-// TODO: Check if this is ok with group, if not copy state.go and paste under "import()" to get the old version back
+// TODO: Maybe add documentation here? Check prints and panics
 
 package elevator
 
@@ -34,8 +34,6 @@ func Elevator(
 
 	for {
 		select {
-
-		// -------------------------------------- New order incoming --------------------------------------
 		case orders = <-newOrderCh:
 			switch state.Behaviour {
 			case Idle:
@@ -83,7 +81,6 @@ func Elevator(
 				panic("Orders in wrong state")
 			}
 
-		// ----------------------------------- Elevator finds new floor -----------------------------------
 		case state.Floor = <-floorEnteredCh:
 			fmt.Printf("[Elevator %d] Detected floor %d\n", localID, state.Floor)
 			hardware.SetFloorIndicator(state.Floor)
@@ -134,11 +131,10 @@ func Elevator(
 				}
 
 			default:
-				panic("FloorEntered in wrong state")
+				panic("Floor in wrong state")
 			}
 			localStateCh <- state
 
-		// ------------------------------------------ Obstruction -----------------------------------------
 		case obstruction := <-obstructedCh:
 			if obstruction != state.Obstructed {
 				state.Obstructed = obstruction
@@ -151,7 +147,6 @@ func Elevator(
 				localStateCh <- state
 			}
 
-		// ----------------------------------------- Door closes ------------------------------------------
 		case <-doorClosedCh:
 			fmt.Printf("[Elevator %d] Door closed at floor %d\n", localID, state.Floor)
 			switch state.Behaviour {
@@ -187,7 +182,6 @@ func Elevator(
 				panic("Door in wrong state")
 			}
 
-		// --------------------------------- MOTOR‐WATCHDOG time gone out ---------------------------------
 		case <-motorTimer.C:
 			if !state.Motorstatus {
 				fmt.Printf("[Elevator %d] WARNING: Lost motor power!\n", localID)
@@ -195,7 +189,6 @@ func Elevator(
 				localStateCh <- state
 			}
 
-		// -------------------------------------- Motor reinitialized -------------------------------------
 		case motor := <-motorActiveCh:
 			if state.Motorstatus {
 				fmt.Printf("[Elevator %d] Motor power restored\n", localID)

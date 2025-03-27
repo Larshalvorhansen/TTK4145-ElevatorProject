@@ -1,3 +1,5 @@
+// TODO: Check if deliveredOrder is a good name for the variable. Also check is "else" is needed, check this for all files
+
 package coordinator
 
 import (
@@ -28,8 +30,6 @@ type SharedState struct {
 	States       [config.NumElevators]LocalState
 }
 
-// -------------- Functions for adding, removing, and updating orders and state --------------
-
 func (ss *SharedState) addOrder(newOrder hardware.ButtonEvent, localID int) {
 	if newOrder.Button == hardware.BT_Cab {
 		ss.States[localID].CabRequests[newOrder.Floor] = true
@@ -58,8 +58,6 @@ func (ss *SharedState) updateState(newState elevator.State, localID int) {
 		CabRequests: ss.States[localID].CabRequests,
 	}
 }
-
-// --------------- Functions for versioning, synchronization, and confirmation ---------------
 
 func (ss *SharedState) prepareNewState(localID int) {
 	ss.Version++
@@ -94,8 +92,6 @@ func (s1 SharedState) inSyncWith(s2 SharedState) bool {
 		s1.HallRequests == s2.HallRequests &&
 		s1.States == s2.States
 }
-
-// --------------------- Functions for network peer availability tracking --------------------
 
 func (ss *SharedState) setLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, localID := range peers.Lost {

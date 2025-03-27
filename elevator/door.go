@@ -1,3 +1,5 @@
+// TODO: Change layout and logical order of the code. Also change panics prints
+
 package elevator
 
 import (

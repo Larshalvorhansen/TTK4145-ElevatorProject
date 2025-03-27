@@ -1,3 +1,5 @@
+// TODO: Change func DistributeElevatorOrders to AssignOrders or Assigner (like in coordinator is called Coordinator)?
+
 // The following implementation is based on the example provided by TTK4145's project resources:
 // https://github.com/TTK4145/Project-resources/blob/master/cost_fns/usage_examples/example.go
 // Modifications were made to integrate it into the current project's codebase and requirements.

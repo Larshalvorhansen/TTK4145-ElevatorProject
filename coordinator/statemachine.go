@@ -1,3 +1,5 @@
+// TODO: Maybe add some documentation here?
+
 package coordinator
 
 import (
