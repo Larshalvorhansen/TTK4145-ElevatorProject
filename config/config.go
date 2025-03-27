@@ -20,7 +20,7 @@ const (
 	// -------------------- Timing --------------------
 	DisconnectTime           = 1 * time.Second
 	DoorOpenDuration         = 3 * time.Second
-	WatchdogTime             = 4 * time.Second
+	WatchdogTime             = 3500 * time.Millisecond
 	PeerBcastInterval        = 15 * time.Millisecond
 	SharedStateBcastInterval = 15 * time.Millisecond
 	HardwarePollRate         = 20 * time.Millisecond
