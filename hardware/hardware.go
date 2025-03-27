@@ -1,5 +1,3 @@
-//TODO: Chech if the commented out functions are needed or not. If not, remove them.
-
 // The following implementation is based on the driver provided in TTK4145's project resources:
 // https://github.com/TTK4145/driver-go/blob/master/elevio/elevator_io.go
 // Modifications were made to adapt it to this project's architecture and requirements.
@@ -69,10 +67,6 @@ func SetDoorOpenLamp(value bool) {
 	write([4]byte{4, toByte(value), 0, 0})
 }
 
-// func SetStopLamp(value bool) {
-// 	write([4]byte{5, toByte(value), 0, 0})
-// }
-
 func PollButtons(receiver chan<- ButtonEvent) {
 	prev := make([][3]bool, config.NumFloors)
 	for {
@@ -101,18 +95,6 @@ func PollFloorSensor(receiver chan<- int) {
 	}
 }
 
-// func PollStopButton(receiver chan<- bool) {
-// 	prev := false
-// 	for {
-// 		time.Sleep(config.HardwarePollRate)
-// 		v := GetStop()
-// 		if v != prev {
-// 			receiver <- v
-// 		}
-// 		prev = v
-// 	}
-// }
-
 func PollObstructionSwitch(receiver chan<- bool) {
 	prev := false
 	for {
@@ -138,11 +120,6 @@ func GetFloor() int {
 		return -1
 	}
 }
-
-// func GetStop() bool {
-// 	a := read([4]byte{8, 0, 0, 0})
-// 	return toBool(a[1])
-// }
 
 func GetObstruction() bool {
 	a := read([4]byte{9, 0, 0, 0})

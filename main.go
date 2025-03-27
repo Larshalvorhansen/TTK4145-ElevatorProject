@@ -65,7 +65,7 @@ func main() {
 		select {
 		case confirmedSharedState := <-confirmedSharedStateCh:
 			newOrderCh <- assigner.AssignOrders(confirmedSharedState, localID)
-			lamp.SetLamps(confirmedSharedState, localID)
+			lamp.SetRequestLamps(confirmedSharedState, localID)
 
 		default:
 			continue // Check if we need this. The commented out code under could be a replacement.
@@ -76,6 +76,6 @@ func main() {
 	// for {
 	// 	confirmedSharedState := <-confirmedSharedStateCh
 	// 	newOrderCh <- assigner.AssignOrders(confirmedSharedState, localID)
-	// 	lamp.SetLamps(confirmedSharedState, localID)
+	// 	lamp.SetRequestLamps(confirmedSharedState, localID)
 	// }
 }

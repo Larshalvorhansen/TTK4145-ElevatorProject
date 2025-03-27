@@ -1,5 +1,3 @@
-// TODO: Change SetLamps to SetRequestLamps??
-
 package lamp
 
 import (
@@ -8,8 +6,7 @@ import (
 	"elevator-project/hardware"
 )
 
-// Sets the button lamps in hall and cab
-func SetLamps(ss coordinator.SharedState, localID int) {
+func SetRequestLamps(ss coordinator.SharedState, localID int) {
 	for floor := 0; floor < config.NumFloors; floor++ {
 		for button := hardware.BT_HallUp; button <= hardware.BT_HallDown; button++ {
 			hardware.SetButtonLamp(button, floor, ss.HallRequests[floor][button])
