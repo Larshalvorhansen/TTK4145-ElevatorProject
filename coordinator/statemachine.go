@@ -42,7 +42,7 @@ func Coordinator(
 	var ss SharedState
 
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
-	sharedStateTicker := time.NewTicker(config.SharedStateBcastInterval)
+	sharedStateTicker := time.NewTicker(config.SSBcastInterval)
 
 	idle := true
 	offline := false
