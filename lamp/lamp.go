@@ -6,7 +6,7 @@ import (
 	"elevator-project/hardware"
 )
 
-func SetRequestLamps(ss coordinator.SharedState, localID int) {
+func SetButtonLamps(ss coordinator.SharedState, localID int) {
 	for floor := 0; floor < config.NumFloors; floor++ {
 		for button := hardware.BT_HallUp; button <= hardware.BT_HallDown; button++ {
 			hardware.SetButtonLamp(button, floor, ss.HallRequests[floor][button])

@@ -62,6 +62,6 @@ func main() {
 	for {
 		confirmedSharedState := <-confirmedSharedStateCh
 		newOrderCh <- assigner.AssignOrders(confirmedSharedState, localID)
-		lamp.SetRequestLamps(confirmedSharedState, localID)
+		lamp.SetButtonLamps(confirmedSharedState, localID)
 	}
 }
