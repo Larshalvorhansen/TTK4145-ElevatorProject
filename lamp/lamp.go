@@ -6,7 +6,7 @@ import (
 	"elevator-project/hardware"
 )
 
-// Sets the button lamps in hall and cab
+// Sets the button lamps for hall- and cabrequests
 func SetLamps(ss coordinator.SharedState, localID int) {
 	for floor := 0; floor < config.NumFloors; floor++ {
 		for button := hardware.BT_HallUp; button <= hardware.BT_HallDown; button++ {
