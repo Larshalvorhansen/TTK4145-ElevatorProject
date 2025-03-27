@@ -28,8 +28,6 @@ type SharedState struct {
 	States       [config.NumElevators]LocalState
 }
 
-// -------------- Functions for adding, removing, and updating orders and state --------------
-
 func (ss *SharedState) addOrder(newOrder hardware.ButtonEvent, localID int) {
 	if newOrder.Button == hardware.BT_Cab {
 		ss.States[localID].CabRequests[newOrder.Floor] = true
@@ -59,8 +57,6 @@ func (ss *SharedState) updateState(newState elevator.State, localID int) {
 	}
 }
 
-// --------------- Functions for versioning, synchronization, and confirmation ---------------
-
 func (ss *SharedState) prepareNewState(localID int) {
 	ss.Version++
 	ss.OriginID = localID
@@ -75,7 +71,7 @@ func (ss *SharedState) confirm(localID int) {
 	ss.Availability[localID] = Confirmed
 }
 
-func (ss *SharedState) isFullyConfirmed(localID int) bool {
+func (ss SharedState) isFullyConfirmed(localID int) bool {
 	if ss.Availability[localID] == Unavailable {
 		return false
 	}
@@ -94,8 +90,6 @@ func (s1 SharedState) inSyncWith(s2 SharedState) bool {
 		s1.HallRequests == s2.HallRequests &&
 		s1.States == s2.States
 }
-
-// --------------------- Functions for network peer availability tracking --------------------
 
 func (ss *SharedState) setLostPeersUnavailable(peers peers.PeerUpdate) {
 	for _, localID := range peers.Lost {
