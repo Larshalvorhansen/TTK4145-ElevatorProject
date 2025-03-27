@@ -30,7 +30,7 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Sjekkliste                                                                                       | ja/nei  |
 | ------------------------------------------------------------------------------------------------ | ------- |
 | Hall-knappen lyser når trykket på                                                                | ja      |
-| Heis ankommer etasje-id=${ELEVATOR_ID}n etter hall-knapp er trykket                                                | ja |
+| Heis ankommer etasje-id=${ELEVATOR_ID}n etter hall-knapp er trykket                              | ja |
 | Cab-knappen lyser når trykket på                                                                 | ja |
 | Heis tar imot cab-kall og kjører til riktig etasje                                               | ja |
 | Heis mister ikke noen kall (hall eller cab)                                                      | ja |
@@ -44,7 +44,7 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Hall-knapper på forskjellige arbeidsstasjoner viser samme lys under normale forhold              | ja |
 | Minst én hall-knapp viser riktig lys ved pakketap                                                | ja |
 | Cab-knappelysene er ikke delt mellom heiser                                                      | kanskje |
-| Knappelys skrur seg på raskt etter trykk                                                         | kanskje |
+| Knappelys skrur seg på raskt etter trykk                                                         | ja |
 | Knappelys skrur seg av når kallet er utført                                                      | kanskje |
 | Døren åpner seg når heisen stopper på etasjen                                                    | kanskje |
 | “Dør åpen”-lampen er tent når døren er åpen                                                      | kanskje |
