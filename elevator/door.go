@@ -24,7 +24,6 @@ func DoorLogic(
 	obstructionCh := make(chan bool)
 	go hardware.PollObstructionSwitch(obstructionCh)
 
-	// Init state
 	obstruction := false
 	doorState := Closed
 

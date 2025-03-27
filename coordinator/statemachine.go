@@ -139,6 +139,7 @@ func Coordinator(
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
+				// check if received shared state is newer than the current, if equal decide based on greater origin id
 				case receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version):
 					ss = receivedSharedState
 					ss.confirm(localID)

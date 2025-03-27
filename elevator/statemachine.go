@@ -1,5 +1,3 @@
-// TODO: Check if this is ok with group, if not copy state.go and paste under "import()" to get the old version back
-
 package elevator
 
 import (
@@ -35,11 +33,11 @@ func Elevator(
 	for {
 		select {
 
-		// -------------------------------------- New order incoming --------------------------------------
 		case orders = <-newOrderCh:
 			switch state.Behaviour {
 			case Idle:
 				switch {
+				// -------------------- Orders at the floor the elevator is at --------------------
 				case orders[state.Floor][state.Direction] || orders[state.Floor][hardware.BT_Cab]:
 					doorOpenCh <- true
 					SendCompletedOrders(state.Floor, state.Direction, orders, orderDeliveredCh)
@@ -52,14 +50,14 @@ func Elevator(
 					SendCompletedOrders(state.Floor, state.Direction, orders, orderDeliveredCh)
 					state.Behaviour = DoorOpen
 					localStateCh <- state
-
+				// ----------------- Orders in the direction the elevator is moving ---------------
 				case orders.OrderInDirection(state.Floor, state.Direction):
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					state.Behaviour = Moving
 					localStateCh <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorActiveCh <- false
-
+				// ---------------- Orders in the opposite direction the elevator is moving ---------
 				case orders.OrderInDirection(state.Floor, state.Direction.FlipDirection()):
 					state.Direction = state.Direction.FlipDirection()
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
@@ -83,7 +81,6 @@ func Elevator(
 				panic("Orders in wrong state")
 			}
 
-		// ----------------------------------- Elevator finds new floor -----------------------------------
 		case state.Floor = <-floorEnteredCh:
 			fmt.Printf("[Elevator %d] Detected floor %d\n", localID, state.Floor)
 			hardware.SetFloorIndicator(state.Floor)
@@ -93,6 +90,7 @@ func Elevator(
 			switch state.Behaviour {
 			case Moving:
 				switch {
+				// -------------------- Orders at the floor the elevator is at --------------------
 				case orders[state.Floor][state.Direction]:
 					hardware.SetMotorDirection(hardware.MD_Stop)
 					doorOpenCh <- true
@@ -110,11 +108,11 @@ func Elevator(
 					doorOpenCh <- true
 					SendCompletedOrders(state.Floor, state.Direction, orders, orderDeliveredCh)
 					state.Behaviour = DoorOpen
-
+				// ----------------- Orders in the direction the elevator is moving ---------------
 				case orders.OrderInDirection(state.Floor, state.Direction):
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorActiveCh <- false
-
+				// ------------ Orders in the opposite direction the elevator is moving -----------
 				case orders[state.Floor][state.Direction.FlipDirection()]:
 					hardware.SetMotorDirection(hardware.MD_Stop)
 					doorOpenCh <- true
@@ -127,7 +125,7 @@ func Elevator(
 					hardware.SetMotorDirection(state.Direction.ToMotorDirection())
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorActiveCh <- false
-
+				// -------------------- No orders, stop and set to idle --------------------
 				default:
 					hardware.SetMotorDirection(hardware.MD_Stop)
 					state.Behaviour = Idle
@@ -138,7 +136,6 @@ func Elevator(
 			}
 			localStateCh <- state
 
-		// ------------------------------------------ Obstruction -----------------------------------------
 		case obstruction := <-obstructedCh:
 			if obstruction != state.Obstructed {
 				state.Obstructed = obstruction
@@ -151,7 +148,6 @@ func Elevator(
 				localStateCh <- state
 			}
 
-		// ----------------------------------------- Door closes ------------------------------------------
 		case <-doorClosedCh:
 			fmt.Printf("[Elevator %d] Door closed at floor %d\n", localID, state.Floor)
 			switch state.Behaviour {
@@ -187,7 +183,6 @@ func Elevator(
 				panic("Door in wrong state")
 			}
 
-		// --------------------------------- MOTOR‐WATCHDOG time gone out ---------------------------------
 		case <-motorTimer.C:
 			if !state.Motorstatus {
 				fmt.Printf("[Elevator %d] WARNING: Lost motor power!\n", localID)
@@ -195,7 +190,6 @@ func Elevator(
 				localStateCh <- state
 			}
 
-		// -------------------------------------- Motor reinitialized -------------------------------------
 		case motor := <-motorActiveCh:
 			if state.Motorstatus {
 				fmt.Printf("[Elevator %d] Motor power restored\n", localID)
