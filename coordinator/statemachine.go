@@ -113,7 +113,7 @@ func Coordinator(
 			case newOrder := <-newOrderCh:
 				if !ss.States[localID].State.Motorstatus {
 					ss.confirm(localID)
-					ss.addCabCall(newOrder, localID)
+					ss.addCabOrder(newOrder, localID)
 					confirmedSharedStateCh <- ss
 				}
 

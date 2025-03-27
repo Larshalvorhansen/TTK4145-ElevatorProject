@@ -1,6 +1,3 @@
-// TODO: Check if deliveredOrder is a good name for the variable. Also check is "else" is needed, check this for all files
-// Check also if the logical order of the types is correct
-
 package coordinator
 
 import (
@@ -39,17 +36,19 @@ func (ss *SharedState) addOrder(newOrder hardware.ButtonEvent, localID int) {
 	}
 }
 
-func (ss *SharedState) addCabCall(newOrder hardware.ButtonEvent, localID int) {
+func (ss *SharedState) addCabOrder(newOrder hardware.ButtonEvent, localID int) {
 	if newOrder.Button == hardware.BT_Cab {
 		ss.States[localID].CabRequests[newOrder.Floor] = true
 	}
 }
 
 func (ss *SharedState) removeOrder(deliveredOrder hardware.ButtonEvent, localID int) {
-	if deliveredOrder.Button == hardware.BT_Cab {
-		ss.States[localID].CabRequests[deliveredOrder.Floor] = false
+	floor := deliveredOrder.Floor
+	button := deliveredOrder.Button
+	if button == hardware.BT_Cab {
+		ss.States[localID].CabRequests[floor] = false
 	} else {
-		ss.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false
+		ss.HallRequests[floor][button] = false
 	}
 }
 
@@ -63,9 +62,9 @@ func (ss *SharedState) updateState(newState elevator.State, localID int) {
 func (ss *SharedState) prepareNewState(localID int) {
 	ss.Version++
 	ss.OriginID = localID
-	for localID := range ss.Availability {
-		if ss.Availability[localID] == Confirmed {
-			ss.Availability[localID] = Unconfirmed
+	for id := range ss.Availability {
+		if ss.Availability[id] == Confirmed {
+			ss.Availability[id] = Unconfirmed
 		}
 	}
 }
@@ -78,8 +77,8 @@ func (ss *SharedState) isFullyConfirmed(localID int) bool {
 	if ss.Availability[localID] == Unavailable {
 		return false
 	}
-	for index := range ss.Availability {
-		if ss.Availability[index] == Unconfirmed {
+	for _, status := range ss.Availability {
+		if status == Unconfirmed {
 			return false
 		}
 	}
