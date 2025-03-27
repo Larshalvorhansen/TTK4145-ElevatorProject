@@ -34,28 +34,28 @@ Stores configuration parameters that several modules use, e.g. number of floors.
 | Cab-knappen lyser når trykket på                                                                 | ja |
 | Heis tar imot cab-kall og kjører til riktig etasje                                               | ja |
 | Heis mister ikke noen kall (hall eller cab)                                                      | ja |
-| Heis fortsetter å fungere ved nettverksbrudd                                                     | kanskje |
+| Heis fortsetter å fungere ved nettverksbrudd                                                     | ja |
 | Heis fortsetter å fungere ved strømbrudd                                                         | ja |
 | Heis fullfører cab-kall etter strøm/nettverk kommer tilbake                                      | ja |
-| Heis håndterer feil innen noen sekunder (ikke minutter)                                          | kankskje |
-| Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | nei? |
+| Heis håndterer feil innen noen sekunder (ikke minutter)                                          | ja |
+| Ved nettverksbrudd fortsetter heis å betjene eksisterende kall                                   | ja |
 | Heis tar fortsatt nye cab-kall ved nettverksbrudd                                                | usikker |
-| Heis trenger ikke manuell restart etter strøm/nettverk går tilbake                               | nei |
+| Heis trenger ikke manuell restart etter strøm/nettverk går tilbake                               | ja |
 | Hall-knapper på forskjellige arbeidsstasjoner viser samme lys under normale forhold              | ja |
 | Minst én hall-knapp viser riktig lys ved pakketap                                                | ja |
-| Cab-knappelysene er ikke delt mellom heiser                                                      | kanskje |
+| Cab-knappelysene er ikke delt mellom heiser                                                      | usikker |
 | Knappelys skrur seg på raskt etter trykk                                                         | ja |
-| Knappelys skrur seg av når kallet er utført                                                      | kanskje |
-| Døren åpner seg når heisen stopper på etasjen                                                    | kanskje |
-| “Dør åpen”-lampen er tent når døren er åpen                                                      | kanskje |
-| Døren lukker seg ikke mens heisen beveger seg                                                    | kanskje |
-| Døren holder seg åpen i 3 sekunder på etasjen                                                    | kanskje |
-| Døren lukker seg ikke hvis en hindring er til stede                                              | kanskje |
+| Knappelys skrur seg av når kallet er utført                                                      | ja |
+| Døren åpner seg når heisen stopper på etasjen                                                    | ja |
+| “Dør åpen”-lampen er tent når døren er åpen                                                      | ja |
+| Døren lukker seg ikke mens heisen beveger seg                                                    | ja |
+| Døren holder seg åpen i 3 sekunder på etasjen                                                    | ja |
+| Døren lukker seg ikke hvis en hindring er til stede                                              | ja |
 | Heisen stopper ikke på hver etasje unødvendig                                                    | ja |
-| Hall-knappelyset slukker når heis ankommer riktig retning                                        | kanskje |
-| Heisen skifter ikke retning unødvendig                                                           | kanskje |
-| Heisen annonserer retning korrekt (opp/ned)                                                      | kanskje |
-| Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | kanskje |
+| Hall-knappelyset slukker når heis ankommer riktig retning                                        | ja |
+| Heisen skifter ikke retning unødvendig                                                           | ja |
+| Heisen annonserer retning korrekt (opp/ned)                                                      | usikker |
+| Hvis heisens retning endres, fjernes motsatt retningskall og døren holdes åpen 3 sekunder ekstra | usikker |
 
 minitest
 
