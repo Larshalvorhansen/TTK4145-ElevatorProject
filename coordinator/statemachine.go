@@ -1,5 +1,3 @@
-// TODO: Check if the new code works before deleting commented out code
-
 package coordinator
 
 import (
@@ -158,7 +156,6 @@ func Coordinator(
 					}
 				}
 				disconnectTimer.Reset(config.DisconnectTime)
-				// disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
 				case receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version):
