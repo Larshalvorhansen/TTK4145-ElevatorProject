@@ -3,33 +3,34 @@ import core.thread, core.sync.mutex, core.sync.condition;
 
 immutable Duration tick = 33.msecs;
 
+
 class Resource(T) {
     private {
-        T value;
-        Mutex mtx;
-        Condition cond;
-        PriorityQueue!int queue;
-        bool opptatt = false;
+        T                   value;
+        Mutex               mtx;
+        Condition           cond;
+        PriorityQueue!int   queue;
+        bool                busy = false;
     }
-
-    this() {
-        mtx = new Mutex();
-        cond = new Condition(mtx);
+    
+    this(){
+        mtx     = new Mutex();
+        cond    = new Condition(mtx);
     }
-
-    T allocate(int id, int prioritet) {
+    
+    T allocate(int id, int priority) {
         mtx.lock();
 
-        // Legg deg i kø med gitt prioritet
-        queue.insert(id, prioritet);
+        // Legg deg i køen med gitt prioritet
+        queue.insert(id, priority);
 
-        // Vent til du er først og ressursen er ledig
-        while (queue.front() != id || opptatt) {
+        // Vent til du er først i køen og ressursen ikke er opptatt
+        while (queue.front() != id || busy) {
             cond.wait();
         }
 
-        // Du har fått tilgang
-        opptatt = true;
+        // Nå er det din tur – ta ressursen og fjern deg fra køen
+        busy = true;
         queue.popFront();
 
         mtx.unlock();
@@ -39,64 +40,72 @@ class Resource(T) {
     void deallocate(T v) {
         mtx.lock();
 
-        opptatt = false;
-        value = v;
+        busy = false;     // Marker at ressursen er ledig igjen
+        value = v;        // Lagre resultat
 
-        // Gi beskjed til andre som venter
+        // Gi beskjed til alle som venter at noe har endret seg
         cond.notifyAll();
 
         mtx.unlock();
     }
 }
 
+
+
+
+
 struct PriorityQueue(T) {
     private {
         struct Elem {
-            T val;
+            T   val;
             int priority;
-            string toString() {
+            string toString(){
                 return format!("%s:%s")(priority, val);
             }
         }
         Elem[] queue;
     }
-
-    void insert(T value, int priority) {
+    
+    void insert(T value, int priority){
+        // Legg til element og sorter slik at høyest prioritet kommer først
         queue ~= Elem(value, priority);
-        queue.sort!((a, b) => a.priority > b.priority, SwapStrategy.stable);
+        queue.sort!((a,b) => a.priority > b.priority, SwapStrategy.stable);
     }
-
-    T front() {
-        assert(!queue.empty,
-            format("Henter fra tom kø av %s", T.stringof));
+    
+    T front(){
+        // Returner elementet med høyest prioritet
+        assert(!queue.empty, 
+            format("Prøver å hente fra tom prioritetskø av %s", T.stringof));
         return queue[0].val;
     }
-
-    void popFront() {
-        assert(!queue.empty,
-            format("Fjerner fra tom kø av %s", T.stringof));
+    
+    void popFront(){
+        // Fjern elementet med høyest prioritet
+        assert(!queue.empty, 
+            format("Prøver å fjerne fra tom prioritetskø av %s", T.stringof));
         queue = queue.remove(0);
     }
-
-    bool empty() {
+    
+    bool empty(){
         return queue.empty;
     }
-
-    string toString() {
+    
+    string toString(){
         return format!("%s([%(%s, %)])")(typeof(this).stringof, queue);
     }
 }
 
-
-void main() {
+void main(){
+    
     auto resource = new Resource!(int[])();
 
-    executionStates = new ExecutionState ;
-
+    executionStates = new ExecutionState[](10);
+    
     auto cfgs = [
         ResourceUserConfig(0, 0, 1, 1),
         ResourceUserConfig(1, 0, 3, 1),
         ResourceUserConfig(2, 1, 5, 1),
+        
         ResourceUserConfig(0, 1, 10, 2),
         ResourceUserConfig(1, 0, 11, 1),
         ResourceUserConfig(2, 1, 11, 1),
@@ -106,6 +115,7 @@ void main() {
         ResourceUserConfig(6, 1, 11, 1),
         ResourceUserConfig(7, 0, 11, 1),
         ResourceUserConfig(8, 1, 11, 1),
+        
         ResourceUserConfig(0, 1, 25, 3),
         ResourceUserConfig(6, 0, 26, 2),
         ResourceUserConfig(7, 0, 26, 2),
@@ -115,106 +125,105 @@ void main() {
         ResourceUserConfig(4, 1, 29, 2),
         ResourceUserConfig(5, 1, 30, 2),
     ];
-
+    
     spawn(&executionLogger);
-    foreach (cfg; cfgs) {
+    foreach(cfg; cfgs){
         spawnLinked(&resourceUser, cfg, cast(shared)resource);
     }
-    foreach (_; 0 .. cfgs.length) {
-        receive((LinkTerminated lt) {});
+    foreach(_; 0..cfgs.length){
+        receive(
+            (LinkTerminated lt){
+            }
+        );
     }
-    Thread.sleep(tick * 2);
-
+    Thread.sleep(tick*2);
+    
+    
     auto val = resource.allocate(-1, 0);
-
+    
     assert(val.length == cfgs.length,
-        "Test feilet: ikke alle brukere ble kjørt");
+        "Test failed: Did not run all users once");
     assert(val[0..3] == [0, 1, 2],
-        format("Test 1 feilet: feil rekkefølge, fikk %s", val[0..3]));
-
+        format("Test 1 failed: Did not run users in ascending order, instead ran %s", val[0..3]));
     assert(val[3] == 0,
-        format("Test 2 feilet: feil rekkefølge, fikk %s", val[3]));
+        format("Test 2 failed: Did not run initial (high priority) user, instead ran %s", val[3]));
     assert(val[4..8].all!("(a & 1) == 0"),
-        format("Test 2 feilet: høyt prioriterte (partall) kom ikke først: %s", val[4..8]));
+        format("Test 2 failed: Did not run high priority (even id) users first, instead ran %s", val[4..8]));
     assert(val[8..12].all!("a & 1"),
-        format("Test 2 feilet: lavt prioriterte (oddetall) kom ikke til slutt: %s", val[8..12]));
-
+        format("Test 2 failed: Did not run low priority (odd id) users last, instead ran %s", val[8..12]));
     assert(val[12] == 0,
-        format("Test 3 feilet: feil rekkefølge, fikk %s", val[12]));
+        format("Test 3 failed: Did not run initial (high priority) user, instead ran %s", val[12]));
     assert(val[13..18].all!("a >= 1") && val[13..18].all!("a <= 5"),
-        format("Test 3 feilet: høyt prioriterte brukere mangler: %s", val[13..18]));
+        format("Test 3 failed: Did not run high priority users first, instead ran %s", val[13..18]));
     assert(val[18..20].all!("a >= 6") && val[18..20].all!("a <= 7"),
-        format("Test 3 feilet: lavt prioriterte brukere mangler: %s", val[18..20]));
-
-    writeln("Alle tester passerer");
+        format("Test 3 failed: Did not run low priority users last, instead ran %s", val[18..20]));
+    writeln("All tests pass");
 }
-
 
 struct ResourceUserConfig {
-    int id;
-    int priority;
-    int release;
-    int execute;
+    int     id;
+    int     priority;
+    int     release;
+    int     execute;
 }
 
-void resourceUser(ResourceUserConfig cfg, shared Resource!(int[]) r) {
-    Thread.getThis.isDaemon = true;
+void resourceUser(ResourceUserConfig cfg, shared Resource!(int[]) r){
+    Thread.getThis.isDaemon = true;    
     auto resource = cast(Resource!(int[]))r;
-
+    
     Thread.sleep(cfg.release * tick);
-
+    
     executionStates[cfg.id] = ExecutionState.waiting;
     auto val = resource.allocate(cfg.id, cfg.priority);
-
+    
     executionStates[cfg.id] = ExecutionState.executing;
-
+    
     Thread.sleep(cfg.execute * tick);
     val ~= cfg.id;
     resource.deallocate(val);
-
+    
     executionStates[cfg.id] = ExecutionState.done;
 }
 
-
-version(Windows) {
+version(Windows){
     enum ExecutionState : char {
-        none = ' ',
-        waiting = cast(char)177,
-        executing = cast(char)178,
-        done = cast(char)223,
+        none        = ' ',
+        waiting     = cast(char)177,
+        executing   = cast(char)178,
+        done        = cast(char)223,
     }
     enum Grid : char {
-        none = ' ',
-        horizontal = cast(char)196,
+        none        = ' ',
+        horizontal  = cast(char)196,
     }
 } else {
     enum ExecutionState : wchar {
-        none = ' ',
-        waiting = '\u2592',
-        executing = '\u2593',
-        done = '\u2580',
+        none        = ' ',
+        waiting     = '\u2592',
+        executing   = '\u2593',
+        done        = '\u2580',
     }
     enum Grid : wchar {
-        none = ' ',
-        horizontal = '\u2500',
+        none        = ' ',
+        horizontal  = '\u2500',
     }
 }
 
 __gshared ExecutionState[] executionStates;
 
-void executionLogger() {
+void executionLogger(){
     Thread.getThis.isDaemon = true;
-    Thread.sleep(tick / 2);
+    Thread.sleep(tick/2);
     auto t = 0;
-
+    
     writefln("  id:%(%3d%)", iota(0, executionStates.length));
-
-    while (true) {
-        writef("%04d : ", t);
-        foreach (id, ref state; executionStates) {
+    
+    while(true){
+        writef("%04d : " , t);
+        foreach(id, ref state; executionStates){
             auto grid = (t % 5 == 0) ? Grid.horizontal : Grid.none;
             writef("%c%c%c", cast(OriginalType!ExecutionState)state, grid, grid);
-            if (state == ExecutionState.done) {
+            if(state == ExecutionState.done){
                 state = ExecutionState.none;
             }
         }
