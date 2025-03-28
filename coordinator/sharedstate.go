@@ -73,7 +73,7 @@ func (ss *SharedState) confirm(localID int) {
 	ss.Availability[localID] = Confirmed
 }
 
-func (ss *SharedState) isFullyConfirmed(localID int) bool {
+func (ss SharedState) isFullyConfirmed(localID int) bool {
 	if ss.Availability[localID] == Unavailable {
 		return false
 	}

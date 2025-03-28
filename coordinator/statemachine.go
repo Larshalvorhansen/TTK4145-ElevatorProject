@@ -109,14 +109,6 @@ func Coordinator(
 					ss.confirm(localID)
 					idle = false
 				}
-				// case receivedSharedState := <-sharedStateRxCh:
-			// 	disconnectTimer = time.NewTimer(config.DisconnectTime)
-			// 	if receivedSharedState.Version > ss.Version || (receivedSharedState.OriginID > ss.OriginID && receivedSharedState.Version == ss.Version) {
-			// 		ss = receivedSharedState
-			// 		ss.setLostPeersUnavailable(peers)
-			// 		ss.confirm(localID)
-			// 		idle = false
-			// 	}
 
 			default:
 			}
