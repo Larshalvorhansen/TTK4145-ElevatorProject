@@ -27,7 +27,7 @@ Before running the program, ensure that the parameters in `config/config.go` are
 
 ### Linux (Recommended)
 
-Use the provided `boot.sh` script to build and start the elevator program interactively:
+Use the provided `start.sh` script to build and start the elevator program interactively:
 1. Make the script executable (only needed once):
     ```bash
     chmod +x start.sh
@@ -53,7 +53,7 @@ go run main.go -id=0 -port=15657
 
 This system consists of several modules, each responsible for specific functionality:
 
-### `bool.sh`
+### `start.sh`
 Shell script for building and launching the elevator program.  
 Prompts for elevator ID and port, and restarts the program automatically if it crashes.
 
