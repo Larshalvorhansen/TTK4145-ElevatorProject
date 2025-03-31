@@ -13,27 +13,20 @@ type Resource struct {
 // Ressursbehandleren, denne skal sørge for at brukere får tilgang til ressursen
 // Prioriterer høyt prioriterte forespørsler
 func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack chan Resource) {
+
 	res := Resource{}
 
 	for {
-		// Først: vent på at ressursen skal komme tilbake før vi prøver å sende den ut igjen
-		res = <-giveBack
+		select {
+		case takeHigh <- res:
 
-		// Etter at ressursen er tilbake, send den til neste bruker
-		for {
+		default:
 			select {
-			// Forsøk å gi til høy prioritet først
 			case takeHigh <- res:
-				goto next // ressursen er sendt, gå videre til neste runde
-			// Hvis ingen høy prioritet venter, prøv lav prioritet
 			case takeLow <- res:
-				goto next
-			// Hvis fortsatt ingen er klare, bare vent litt før vi prøver igjen
-			default:
-				time.Sleep(tick / 10)
 			}
 		}
-	next:
+		res = <-giveBack
 	}
 }
 
